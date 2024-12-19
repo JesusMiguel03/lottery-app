@@ -17,6 +17,8 @@ class LotteryResource extends Resource
 {
     protected static ?string $model = Lottery::class;
 
+    protected static ?string $label = "Rifas";
+
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form
