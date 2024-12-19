@@ -66,6 +66,9 @@ class ClientResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('id')
+                    ->label('ID')
+                    ->sortable(),
                 TextColumn::make('name')
                     ->label('Nombre'),
                 TextColumn::make('last_name')
