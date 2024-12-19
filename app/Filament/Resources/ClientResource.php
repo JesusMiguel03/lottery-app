@@ -23,7 +23,9 @@ class ClientResource extends Resource
 
     protected static ?string $label = "Clientes";
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?int $navigationSort = 2;
+
+    protected static ?string $navigationIcon = 'heroicon-o-users';
 
     public static function form(Form $form): Form
     {
@@ -54,7 +56,7 @@ class ClientResource extends Resource
                     ])
                     ->placeholder('Selecciona una opción'),
                 TextInput::make('phone')
-                    ->label('Código')
+                    ->label('Teléfono')
                     ->type('number')
                     ->placeholder('4561278'),
             ]);

@@ -19,7 +19,9 @@ class LotteryResource extends Resource
 
     protected static ?string $label = "Rifas";
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?int $navigationSort = 3;
+
+    protected static ?string $navigationIcon = 'heroicon-o-book-open';
 
     public static function form(Form $form): Form
     {
