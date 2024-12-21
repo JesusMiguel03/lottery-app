@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('descrition');
             $table->integer('total_winners');
             $table->integer('total_tickets');
-            $table->dateTime('initial_date');
-            $table->dateTime('final_date');
+            $table->date('initial_date');
+            $table->date('final_date');
             $table->timestamps();
         });
     }

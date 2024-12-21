@@ -16,7 +16,10 @@ return new class extends Migration
             $table->string('name');
             $table->integer('quantity');
             $table->integer('value');
-            $table->foreignId('lottery_id')->constrained();
+            $table->foreignId('lottery_id')
+                ->constrained()
+                ->cascadeOnDelete()
+                ->cascadeOnUpdate();
             $table->timestamps();
         });
     }

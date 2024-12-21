@@ -13,11 +13,17 @@ return new class extends Migration
     {
         Schema::create('tickets', function (Blueprint $table) {
             $table->id();
-            $table->boolean('active');
+            $table->boolean('active')
+                ->default(false);
             $table->integer('number');
-            $table->boolean('winner');
-            $table->foreignId('client_id')->constrained();
-            $table->foreignId('lottery_id')->constrained()->cascadeOnDelete()->cascadeOnUpdate();
+            $table->boolean('winner')
+                ->default(false);
+            $table->foreignId('client_id')
+                ->constrained();
+            $table->foreignId('lottery_id')
+                ->constrained()
+                ->cascadeOnDelete()
+                ->cascadeOnUpdate();
             $table->timestamps();
         });
     }

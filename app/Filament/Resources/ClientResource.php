@@ -69,14 +69,16 @@ class ClientResource extends Resource
                 TextColumn::make('id')
                     ->label('ID')
                     ->sortable(),
-                TextColumn::make('name')
-                    ->label('Nombre'),
-                TextColumn::make('last_name')
-                    ->label('Apellido'),
+                TextColumn::make('fullName')
+                    ->label('Nombre')
+                    ->sortable()
+                    ->searchable(['name', 'last_name']),
                 TextColumn::make('document')
-                    ->label('Documento'),
+                    ->label('Documento')
+                    ->searchable(['doc_type', 'doc']),
                 TextColumn::make('phoneNumber')
                     ->label('Teléfono')
+                    ->searchable()
             ])
             ->filters([
                 //
@@ -88,7 +90,10 @@ class ClientResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultSort('id', 'desc')
+            ->searchPlaceholder('Buscar por nombre, documento o teléfono')
+            ->searchDebounce(500);
     }
 
     public static function getRelations(): array
@@ -105,5 +110,23 @@ class ClientResource extends Resource
             'create' => Pages\CreateClient::route('/create'),
             'edit' => Pages\EditClient::route('/{record}/edit'),
         ];
+    }
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'last_name', 'code', 'phone', 'doc_type', 'doc'];
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        $search = request('search');
+        return parent::getGlobalSearchEloquentQuery()
+            ->where(function ($query) use ($search) {
+                $cleanedSearchString = str_replace('-', '', $search);
+                $query
+                    ->whereRaw('name || " " || last_name LIKE ?', ["%{$cleanedSearchString}%"])
+                    ->orWhereRaw('code || "" || phone LIKE ?', ["%{$cleanedSearchString}%"])
+                    ->orWhereRaw('doc_type || "-" || doc LIKE ?', ["%{$cleanedSearchString}%"]);
+            });
     }
 }
