@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\LotteryResource\Actions\SellTicketsAction;
+use App\Filament\Resources\LotteryResource\Actions\TicketPaymentAction;
 use App\Filament\Resources\LotteryResource\Pages;
 use App\Filament\Resources\LotteryResource\RelationManagers;
 use App\Models\Client;
@@ -242,7 +243,9 @@ class LotteryResource extends Resource
             ->actions([
                 ActionGroup::make([
                     EditAction::make(),
-                    SellTicketsAction::make()
+                    SellTicketsAction::make(),
+                    TicketPaymentAction::make()
+                        ->hidden(fn(Lottery $record) => count($record->not_payed_tickets()) === 0)
                 ])
             ])
             ->bulkActions([

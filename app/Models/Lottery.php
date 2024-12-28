@@ -28,6 +28,14 @@ class Lottery extends Model
         return $this->hasMany(Prize::class);
     }
 
+    public function not_payed_tickets()
+    {
+        return $this->tickets()
+            ->whereDoesntHave('payment')
+            ->pluck('number', 'id')
+            ->toArray();
+    }
+
     public function tickets_left()
     {
         return $this->tickets->where('client_id', null)->pluck('id')->toArray();
