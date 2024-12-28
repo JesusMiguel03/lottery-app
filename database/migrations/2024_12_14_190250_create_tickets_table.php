@@ -14,12 +14,15 @@ return new class extends Migration
         Schema::create('tickets', function (Blueprint $table) {
             $table->id();
             $table->boolean('active')
-                ->default(false);
+                ->default(true);
             $table->integer('number');
             $table->boolean('winner')
                 ->default(false);
             $table->foreignId('client_id')
-                ->constrained();
+                ->nullable()
+                ->constrained()
+                ->cascadeOnDelete()
+                ->cascadeOnUpdate();
             $table->foreignId('lottery_id')
                 ->constrained()
                 ->cascadeOnDelete()

@@ -34,4 +34,9 @@ class Client extends Model
             get: fn(string | null $value, array $attributes): string => $attributes['code'] . $attributes['phone']
         );
     }
+
+    public function tickets()
+    {
+        return $this->hasMany(Ticket::class);
+    }
 }

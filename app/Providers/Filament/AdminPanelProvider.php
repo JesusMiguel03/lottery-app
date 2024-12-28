@@ -57,6 +57,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->darkMode(true)
             ->sidebarCollapsibleOnDesktop(true)
-            ->spa(true);
+            ->spa(true)
+            ->databaseTransactions();
     }
 }
