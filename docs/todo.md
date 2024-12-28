@@ -19,14 +19,10 @@ Notificaciones (whatsapp) (https://wwebjs.dev/guide/creating-your-bot/authentica
         -   Lotteries dropdown
             -   Tickets as checkboxes
         -   Buyed tickets
--   Lottery:
-    -   Rules
-    -   Messages
-    -   Edit:
-        -   Ca be recalculated only if last buyed ticket is lower than new ticket max number
 
 # TODO
 
+-   Currency model
 -   Validaciones
 -   Traducciones
 -   onCascade, onDelete
