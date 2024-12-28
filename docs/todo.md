@@ -6,7 +6,24 @@ Compran y pagan el mismo dia
 Compran varios y abonan
 Compran y no pagan
 Compran y tardan en pagar
-Notificaciones (whatsapp)
+Notificaciones (whatsapp) (https://wwebjs.dev/guide/creating-your-bot/authentication.html#remote-stores)
+
+# WIP
+
+-   Remover notificaicon de creado y usar solo custom
+-   Search on tables
+-   Client:
+    -   Rules
+    -   Messages
+    -   Modal tickets (tabs)
+        -   Lotteries dropdown
+            -   Tickets as checkboxes
+        -   Buyed tickets
+-   Lottery:
+    -   Rules
+    -   Messages
+    -   Edit:
+        -   Ca be recalculated only if last buyed ticket is lower than new ticket max number
 
 # TODO
 
