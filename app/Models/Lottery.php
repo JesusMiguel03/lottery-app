@@ -15,6 +15,7 @@ class Lottery extends Model
         'total_tickets',
         'initial_date',
         'final_date',
+        'total_price'
     ];
 
     public function tickets()
@@ -25,6 +26,52 @@ class Lottery extends Model
     public function prizes()
     {
         return $this->hasMany(Prize::class);
+    }
+
+    public function tickets_left()
+    {
+        return $this->tickets->where('client_id', null)->pluck('id')->toArray();
+    }
+
+    public function ticket_price()
+    {
+        if (empty($this->total_price)) {
+            return 0;
+        }
+
+        return $this->tickets->count() / $this->total_price;
+    }
+
+    public function totalLeft(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (empty($this->total_price)) {
+                    return 0;
+                }
+
+                return $this->total_price - $this->totalPayed;
+            }
+        );
+    }
+
+    public function totalPayed(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $ticket_price = $this->ticket_price();
+                $tickets = $this->tickets()
+                    ->whereHas('payment')
+                    ->where(function ($query) {
+                        return $query->whereNotNull('id');
+                    })
+                    ->select('id')
+                    ->count();
+
+                $total_price = $ticket_price * $tickets;
+                return $total_price;
+            }
+        );
     }
 
     public function dateRange(): Attribute

@@ -18,4 +18,9 @@ class Ticket extends Model
     {
         return $this->belongsTo(Client::class);
     }
+
+    public function payment()
+    {
+        return $this->hasOne(Payment::class);
+    }
 }
