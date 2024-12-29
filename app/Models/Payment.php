@@ -12,4 +12,9 @@ class Payment extends Model
         'type',
         'ticket_id'
     ];
+
+    public function ticket()
+    {
+        return $this->belongsTo(Ticket::class);
+    }
 }

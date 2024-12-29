@@ -14,8 +14,15 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use Filament\Infolists\Components\Fieldset;
+use Filament\Infolists\Components\Grid;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\Split;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -169,7 +176,8 @@ class ClientResource extends Resource
             ->actions([
                 ActionGroup::make([
                     Tables\Actions\EditAction::make(),
-                    SeeTicketsAction::make()
+                    ViewAction::make(),
+                    SeeTicketsAction::make(),
                 ])
             ])
             ->bulkActions([
@@ -195,6 +203,60 @@ class ClientResource extends Resource
             'index' => Pages\ListClients::route('/'),
             'create' => Pages\CreateClient::route('/create'),
             'edit' => Pages\EditClient::route('/{record}/edit'),
+            'view' => Pages\ViewClient::route('/{record}'),
         ];
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Fieldset::make('Datos personales')
+                    ->schema([
+                        TextEntry::make('fullName')
+                            ->label('Nombre y apellido'),
+                        Split::make([
+                            TextEntry::make('document')
+                                ->label('Cédula'),
+                            TextEntry::make('document')
+                                ->label('Cédula'),
+                        ]),
+                    ]),
+                Fieldset::make('Estadísticas')
+                    ->schema([
+                        Grid::make([
+                            'md' => 4
+                        ])->schema([
+                            TextEntry::make('id')
+                                ->label('Boletos totales')
+                                ->formatStateUsing(fn(Client $record) => $record->get_tickets_count('yearly')),
+                            TextEntry::make('id')
+                                ->label('Boletos mensuales')
+                                ->formatStateUsing(fn(Client $record) => $record->get_tickets_count('monthly')),
+                            TextEntry::make('id')
+                                ->label('Loterías totales')
+                                ->formatStateUsing(fn(Client $record) => $record->get_lotteries_count('yearly')),
+                            TextEntry::make('id')
+                                ->label('Loterías mensuales')
+                                ->formatStateUsing(fn(Client $record) => $record->get_lotteries_count('monthly')),
+                            TextEntry::make('id')
+                                ->label('Total pagado')
+                                ->formatStateUsing(fn(Client $record) => "{$record->get_total_payed()}$"),
+                            TextEntry::make('id')
+                                ->label('Deuda total')
+                                ->formatStateUsing(fn(Client $record) => "{$record->get_total_debt()}$"),
+                            TextEntry::make('id')
+                                ->label('Loterías ganadas')
+                                ->formatStateUsing(fn(Client $record) => "{$record->get_lotteries_won()}"),
+                            TextEntry::make('id')
+                                ->label('Equivalente en premios')
+                                ->formatStateUsing(
+                                    fn(Client $record) =>
+                                    //                                "{$record->get_estimated_prizes_value()}"
+                                    'Pendiente'
+                                ),
+                        ])
+                    ]),
+            ]);
     }
 }
