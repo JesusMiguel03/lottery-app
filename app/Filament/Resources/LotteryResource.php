@@ -9,6 +9,7 @@ use App\Filament\Resources\LotteryResource\RelationManagers;
 use App\Models\Client;
 use App\Models\Lottery;
 use App\Models\Ticket;
+use Carbon\Carbon;
 use Filament\Actions;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Concerns\InteractsWithRecord;
@@ -31,6 +32,7 @@ use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -219,18 +221,25 @@ class LotteryResource extends Resource
             })
             ->columns([
                 TextColumn::make('id')
-                    ->label('ID'),
+                    ->label('ID')
+                    ->sortable(),
                 TextColumn::make('name')
-                    ->label('Nombre'),
+                    ->label('Nombre')
+                    ->sortable()
+                    ->searchable(),
                 TextColumn::make('description')
-                    ->label('Descripción'),
+                    ->label('Descripción')
+                    ->searchable(),
                 TextColumn::make('total_winners')
-                    ->label('Ganadores'),
+                    ->label('Ganadores')
+                    ->searchable(),
                 TextColumn::make('total_tickets')
-                    ->label('Boletos'),
+                    ->label('Boletos')
+                    ->searchable(),
                 TextColumn::make('total_price')
                     ->label('Precio total')
-                    ->suffix('$'),
+                    ->suffix('$')
+                    ->searchable(),
                 TextColumn::make('total_payed')
                     ->label('Total pagado')
                     ->suffix('$'),
@@ -238,7 +247,27 @@ class LotteryResource extends Resource
                     ->label('Duración'),
             ])
             ->filters([
-                //
+                Filter::make('date')
+                    ->label('Fechas')
+                    ->form([
+                        DatePicker::make('start_date')
+                            ->label('Fecha inicial')
+                            ->required()
+                            ->displayFormat('d/m/Y')
+                            ->format('d/m/Y'),
+                        DatePicker::make('end_date')
+                            ->label('Fecha final')
+                            ->required()
+                            ->displayFormat('d/m/Y')
+                            ->format('d/m/Y'),
+                    ])
+                    ->query(fn(Builder $query, array $data) => $query->when(
+                        !empty($data['start_date']) && !empty($data['end_date']),
+                        fn(Builder $query) => $query->whereBetween('created_at', [
+                            Carbon::parse($data['start_date']),
+                            Carbon::parse($data['end_date']),
+                        ])
+                    )),
             ])
             ->actions([
                 ActionGroup::make([
@@ -253,7 +282,9 @@ class LotteryResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('id', 'desc');
+            ->defaultSort('id', 'desc')
+            ->searchPlaceholder('Buscar rifa')
+            ->searchDebounce(500);
     }
 
     public static function getRelations(): array

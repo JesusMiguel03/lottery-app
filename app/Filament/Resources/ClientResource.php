@@ -15,6 +15,7 @@ use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ClientResource extends Resource
@@ -75,10 +76,39 @@ class ClientResource extends Resource
                     ->searchable(['name', 'last_name']),
                 TextColumn::make('document')
                     ->label('Documento')
-                    ->searchable(['doc_type', 'doc']),
+                    ->searchable(true, function (Builder $query, string $search) {
+                        $upper_string = strtoupper($search);
+                        $has_doc_type = in_array($upper_string[0], ['V', 'E', 'J', 'G']);
+
+                        if (strlen($upper_string) > 1 && $has_doc_type) {
+                            $doc_type = strtoupper(substr($upper_string, 0, 1));
+                            $doc = substr($upper_string, 2);
+
+                            $query->orWhere(function ($q) use ($doc_type, $doc) {
+                                $q->where('doc_type', 'like', "%{$doc_type}%")
+                                    ->where('doc', 'like', "%{$doc}%");
+                            });
+                        } else {
+                            return $query->where('doc_type', 'like', "%{$upper_string}%")
+                                ->orWhere('doc', 'like', "%{$upper_string}%");
+                        }
+                    }),
                 TextColumn::make('phoneNumber')
                     ->label('Teléfono')
-                    ->searchable()
+                    ->searchable(true, function (Builder $query, string $search) {
+                        if (strlen($search) > 4) {
+                            $code = substr($search, 0, 4);
+                            $phone = substr($search, 4);
+
+                            $query->orWhere(function ($q) use ($code, $phone) {
+                                $q->where('code', 'like', "%{$code}%")
+                                    ->where('phone', 'like', "%{$phone}%");
+                            });
+                        } else {
+                            return $query->where('code', 'like', "%{$search}%")
+                                ->orWhere('phone', 'like', "%{$search}%");
+                        }
+                    })
             ])
             ->filters([
                 //
@@ -92,7 +122,7 @@ class ClientResource extends Resource
                 ]),
             ])
             ->defaultSort('id', 'desc')
-            ->searchPlaceholder('Buscar por nombre, documento o teléfono')
+            ->searchPlaceholder('Buscar cliente')
             ->searchDebounce(500);
     }
 
@@ -115,18 +145,5 @@ class ClientResource extends Resource
     public static function getGloballySearchableAttributes(): array
     {
         return ['name', 'last_name', 'code', 'phone', 'doc_type', 'doc'];
-    }
-
-    public static function getGlobalSearchEloquentQuery(): Builder
-    {
-        $search = request('search');
-        return parent::getGlobalSearchEloquentQuery()
-            ->where(function ($query) use ($search) {
-                $cleanedSearchString = str_replace('-', '', $search);
-                $query
-                    ->whereRaw('name || " " || last_name LIKE ?', ["%{$cleanedSearchString}%"])
-                    ->orWhereRaw('code || "" || phone LIKE ?', ["%{$cleanedSearchString}%"])
-                    ->orWhereRaw('doc_type || "-" || doc LIKE ?', ["%{$cleanedSearchString}%"]);
-            });
     }
 }

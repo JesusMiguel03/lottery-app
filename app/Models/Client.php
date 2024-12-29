@@ -19,7 +19,7 @@ class Client extends Model
     public function fullName(): Attribute
     {
         return Attribute::make(
-            get: fn(string | null $value, array $attributes): string => $attributes['name'] . '-' . $attributes['last_name']
+            get: fn(string | null $value, array $attributes): string => $attributes['name'] . ' ' . $attributes['last_name']
         );
     }
     public function document(): Attribute
