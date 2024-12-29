@@ -7,7 +7,6 @@ use App\Models\Payment;
 use App\Models\Ticket;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use Illuminate\Support\Number;
 
 class StatsOverview extends BaseWidget
 {

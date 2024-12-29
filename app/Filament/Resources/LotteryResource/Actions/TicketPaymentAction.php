@@ -3,18 +3,13 @@
 namespace App\Filament\Resources\LotteryResource\Actions;
 
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\CheckboxList;
 use Filament\Tables\Actions\Action;
-use App\Models\Client;
 use App\Models\Ticket;
 use App\Models\Lottery;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
 use Filament\Notifications\Notification;
-use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
 class TicketPaymentAction extends Action

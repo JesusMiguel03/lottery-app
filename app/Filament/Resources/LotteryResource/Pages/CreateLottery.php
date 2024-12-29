@@ -5,7 +5,6 @@ namespace App\Filament\Resources\LotteryResource\Pages;
 use App\Filament\Resources\LotteryResource;
 use App\RedirectTrait;
 use Carbon\Carbon;
-use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\DB;
 use Filament\Notifications\Notification;
