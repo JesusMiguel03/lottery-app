@@ -7,8 +7,6 @@ Notificaciones (whatsapp) (https://wwebjs.dev/guide/creating-your-bot/authentica
 
 # WIP
 
--   Remover notificaicon de creado y usar solo custom
--   Search on tables
 -   Client:
     -   Rules
     -   Messages
