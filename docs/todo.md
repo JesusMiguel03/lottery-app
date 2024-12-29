@@ -1,5 +1,10 @@
 Notificaciones (whatsapp) (https://wwebjs.dev/guide/creating-your-bot/authentication.html#remote-stores)
 
+# Charts
+
+-   Pagos mensuales
+-   Filtros
+
 # WIP
 
 -   Remover notificaicon de creado y usar solo custom
