@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Client;
+use Carbon\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -15,6 +16,7 @@ class ClientSeeder extends Seeder
     {
         $clients = [];
         for ($i = 0; $i < 100; $i++) {
+            $now = Carbon::now('utc')->toDateTimeString();
             $clients[] = [
                 'name' => fake()->name(),
                 'last_name' => fake()->lastName(),
@@ -22,6 +24,8 @@ class ClientSeeder extends Seeder
                 'phone' => fake()->numberBetween(000_00_00, 999_99_99),
                 'doc' => fake()->numberBetween(000_000_000, 999_999_999),
                 'doc_type' => fake()->randomElement(['V', 'E', 'J', 'G']),
+                'created_at' => $now,
+                'updated_at' => $now
             ];
         }
 

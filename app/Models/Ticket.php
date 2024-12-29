@@ -11,7 +11,9 @@ class Ticket extends Model
         'winner',
         'number',
         'client_id',
-        'lottery_id'
+        'lottery_id',
+        'created_at',
+        'updated_at',
     ];
 
     public function client()

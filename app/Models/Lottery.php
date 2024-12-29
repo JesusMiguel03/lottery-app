@@ -32,6 +32,7 @@ class Lottery extends Model
     {
         return $this->tickets()
             ->whereDoesntHave('payment')
+            ->whereHas('client')
             ->pluck('number', 'id')
             ->toArray();
     }

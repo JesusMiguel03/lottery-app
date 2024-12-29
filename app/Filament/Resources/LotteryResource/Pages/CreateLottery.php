@@ -4,6 +4,7 @@ namespace App\Filament\Resources\LotteryResource\Pages;
 
 use App\Filament\Resources\LotteryResource;
 use App\RedirectTrait;
+use Carbon\Carbon;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\DB;
@@ -22,8 +23,9 @@ class CreateLottery extends CreateRecord
 
                 $total_tickets = $data['total_tickets'];
 
-                $tickets = array_map(function ($n) use ($lottery, $total_tickets) {
-                    return ['number' => $n, 'lottery_id' => $lottery->id];
+                $tickets = array_map(function ($n) use ($lottery) {
+                    $now = Carbon::now('utc')->toDateTimeString();
+                    return ['number' => $n, 'lottery_id' => $lottery->id, 'created_at' => $now, 'updated_at' => $now];
                 }, range(1, $total_tickets));
 
                 $lottery->tickets()->insert($tickets);

@@ -46,7 +46,6 @@ class TicketPaymentAction extends Action
               ->placeholder('Ej: 100')
               ->type('number')
               ->numeric()
-              ->integer()
               ->step(0.01)
               ->minValue(0.01)
               ->markAsRequired()

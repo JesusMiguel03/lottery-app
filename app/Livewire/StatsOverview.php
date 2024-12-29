@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Livewire;
+
+use App\Models\Client;
+use App\Models\Payment;
+use App\Models\Ticket;
+use Filament\Widgets\StatsOverviewWidget as BaseWidget;
+use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Number;
+
+class StatsOverview extends BaseWidget
+{
+    protected function getStats(): array
+    {
+        $total_clients = Client::count();
+        $total_tickets = Ticket::where('active', 1)->count();
+
+        $montly_payments = Payment::whereMonth('created_at', '=', now()->month)->sum('amount');
+        $montly_tickets = Ticket::whereMonth('created_at', '=', now()->month)->count();
+
+        return [
+            Stat::make('Clientes registrados', $total_clients),
+            Stat::make('Boletos totales', $total_tickets),
+            Stat::make('Boletos mensuales', $montly_tickets),
+            Stat::make('Pagos mensuales', "{$montly_payments} $"),
+        ];
+    }
+}
