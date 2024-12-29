@@ -29,18 +29,53 @@ class ClientResource extends Resource
             ->schema([
                 TextInput::make('name')
                     ->label('Nombre')
-                    ->placeholder('José'),
+                    ->placeholder('José')
+                    ->markAsRequired()
+                    ->rules(['required', 'string', 'min:3', 'max:15', 'regex:/^[a-zA-Z\s]+$/'])
+                    ->validationMessages([
+                        'required' => 'Debe indicar el nombre',
+                        'string' => 'El nombre debe ser una cadena de texto',
+                        'min' => 'El nombre debe tener al menos :min caracteres',
+                        'max' => 'El nombre no debe tener más de :max caracteres',
+                        'regex' => 'El nombre solo puede contener letras y espacios'
+                    ]),
                 TextInput::make('last_name')
                     ->label('Apellido')
-                    ->placeholder('Marcos'),
+                    ->placeholder('Marcos')
+                    ->markAsRequired()
+                    ->rules(['required', 'string', 'min:3', 'max:15', 'regex:/^[a-zA-Z\s]+$/'])
+                    ->validationMessages([
+                        'required' => 'Debe indicar el apellido',
+                        'string' => 'El apellido debe ser una cadena de texto',
+                        'min' => 'El apellido debe tener al menos :min caracteres',
+                        'max' => 'El apellido no debe tener más de :max caracteres',
+                        'regex' => 'El apellido solo puede contener letras y espacios'
+                    ]),
                 Select::make('doc_type')
                     ->label('Nacionalidad')
                     ->options(['V' => 'V', 'E' => 'E', 'J' => 'J', 'G' => 'G'])
-                    ->placeholder('Selecciona una opción'),
+                    ->placeholder('Selecciona una opción')
+                    ->markAsRequired()
+                    ->rules(['required'])
+                    ->in(['V', 'E', 'J', 'G'])
+                    ->validationMessages([
+                        'required' => "Debe seleccionar una opción",
+                        'in' => "Debe seleccionar una de las opciones",
+                    ]),
                 TextInput::make('doc')
                     ->label('Documento')
                     ->type('number')
-                    ->placeholder('12451248'),
+                    ->placeholder('12451248')
+                    ->markAsRequired()
+                    ->rules(['required', 'min_digits:6', 'max_digits:9',  'numeric'])
+                    ->unique(ignoreRecord: true)
+                    ->validationMessages([
+                        'required' => 'Debe indicar la cédula',
+                        'min_digits' => 'Debe contener al menos :min dígitos',
+                        'max_digits' => 'Debe contener máximo :max dígitos',
+                        'numeric' => 'Deben ser números',
+                        'unique' => 'Esta cédula se encuentra registrada',
+                    ]),
                 Select::make('code')
                     ->label('Código')
                     ->options([
@@ -50,11 +85,27 @@ class ClientResource extends Resource
                         '0424' => '0424',
                         '0426' => '0426'
                     ])
-                    ->placeholder('Selecciona una opción'),
+                    ->placeholder('Selecciona una opción')
+                    ->markAsRequired()
+                    ->rules(['required'])
+                    ->in(['0412', '0414', '0416', '0424', '0426'])
+                    ->validationMessages([
+                        'required' => "Debe seleccionar una opción",
+                        'in' => "Debe seleccionar una de las opciones",
+                    ]),
                 TextInput::make('phone')
                     ->label('Teléfono')
                     ->type('number')
-                    ->placeholder('4561278'),
+                    ->placeholder('4561278')
+                    ->markAsRequired()
+                    ->rules(['required', 'digits:7', 'numeric'])
+                    ->unique(ignoreRecord: true)
+                    ->validationMessages([
+                        'required' => 'Debe indicar un número de teléfono',
+                        'digits' => 'Debe tener :digits dígitos',
+                        'numeric' => 'Deben ser números',
+                        'unique' => 'Este teléfono se encuentra registrado',
+                    ]),
             ]);
     }
 
