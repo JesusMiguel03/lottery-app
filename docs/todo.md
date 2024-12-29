@@ -5,14 +5,6 @@ Notificaciones (whatsapp) (https://wwebjs.dev/guide/creating-your-bot/authentica
 -   Pagos mensuales
 -   Filtros
 
-# WIP
-
--   Client:
-    -   Modal tickets (tabs)
-        -   Lotteries dropdown
-            -   Tickets as checkboxes
-        -   Buyed tickets
-
 # TODO
 
 -   Currency model
