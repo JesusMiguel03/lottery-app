@@ -39,4 +39,9 @@ class Client extends Model
     {
         return $this->hasMany(Ticket::class);
     }
+
+    public function get_lotteries()
+    {
+        return $this->tickets()->with('lottery')->get()->pluck('lottery.name', 'lottery_id')->unique()->toArray();
+    }
 }

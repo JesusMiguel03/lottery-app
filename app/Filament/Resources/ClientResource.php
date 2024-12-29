@@ -2,11 +2,18 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\ClientResource\Actions\SeeTicketsAction;
 use App\Filament\Resources\ClientResource\Pages;
 use App\Models\Client;
+use App\Models\Ticket;
+use Filament\Forms\Components\CheckboxList;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\ActionGroup;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -160,7 +167,10 @@ class ClientResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                ActionGroup::make([
+                    Tables\Actions\EditAction::make(),
+                    SeeTicketsAction::make()
+                ])
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -186,10 +196,5 @@ class ClientResource extends Resource
             'create' => Pages\CreateClient::route('/create'),
             'edit' => Pages\EditClient::route('/{record}/edit'),
         ];
-    }
-
-    public static function getGloballySearchableAttributes(): array
-    {
-        return ['name', 'last_name', 'code', 'phone', 'doc_type', 'doc'];
     }
 }

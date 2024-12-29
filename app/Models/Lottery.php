@@ -18,39 +18,6 @@ class Lottery extends Model
         'total_price'
     ];
 
-    public function tickets()
-    {
-        return $this->hasMany(Ticket::class);
-    }
-
-    public function prizes()
-    {
-        return $this->hasMany(Prize::class);
-    }
-
-    public function not_payed_tickets()
-    {
-        return $this->tickets()
-            ->whereDoesntHave('payment')
-            ->whereHas('client')
-            ->pluck('number', 'id')
-            ->toArray();
-    }
-
-    public function tickets_left()
-    {
-        return $this->tickets->where('client_id', null)->pluck('id')->toArray();
-    }
-
-    public function ticket_price()
-    {
-        if (empty($this->total_price)) {
-            return 0;
-        }
-
-        return $this->tickets->count() / $this->total_price;
-    }
-
     public function totalLeft(): Attribute
     {
         return Attribute::make(
@@ -88,5 +55,50 @@ class Lottery extends Model
         return Attribute::make(
             get: fn(string | null $value, array $attributes): string => Carbon::createFromFormat('d/m/Y', $attributes['initial_date'])->format('d-m-Y') . ' al ' . Carbon::createFromFormat('d/m/Y', $attributes['final_date'])->format('d-m-Y')
         );
+    }
+
+    public function getFullName(): Attribute
+    {
+        return Attribute::make(
+            get: fn(string | null $value, array $attributes): string => "#{$attributes['id']} - {$attributes['name']}"
+        );
+    }
+
+    public function tickets()
+    {
+        return $this->hasMany(Ticket::class);
+    }
+
+    public function prizes()
+    {
+        return $this->hasMany(Prize::class);
+    }
+
+    public function not_payed_tickets()
+    {
+        return $this->tickets()
+            ->whereDoesntHave('payment')
+            ->whereHas('client')
+            ->pluck('number', 'id')
+            ->toArray();
+    }
+
+    public function tickets_left()
+    {
+        return $this->tickets->where('client_id', null)->pluck('id')->toArray();
+    }
+
+    public function get_by_client(Client $client)
+    {
+        return $this->tickets->where('client_id', $client->id)->pluck('id')->toArray();
+    }
+
+    public function ticket_price()
+    {
+        if (empty($this->total_price)) {
+            return 0;
+        }
+
+        return $this->tickets->count() / $this->total_price;
     }
 }

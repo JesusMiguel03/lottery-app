@@ -25,4 +25,9 @@ class Ticket extends Model
     {
         return $this->hasOne(Payment::class);
     }
+
+    public function lottery()
+    {
+        return $this->belongsTo(Lottery::class);
+    }
 }
