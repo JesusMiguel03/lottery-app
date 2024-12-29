@@ -8,8 +8,6 @@ Notificaciones (whatsapp) (https://wwebjs.dev/guide/creating-your-bot/authentica
 # WIP
 
 -   Client:
-    -   Rules
-    -   Messages
     -   Modal tickets (tabs)
         -   Lotteries dropdown
             -   Tickets as checkboxes
