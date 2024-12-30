@@ -20,6 +20,20 @@ class CreateLottery extends CreateRecord
             try {
                 $lottery = static::getModel()::create($data);
 
+                Notification::make()
+                    ->title('Rifa creada')
+                    ->body("La rifa ({$lottery->name}) ha sido registrada")
+                    ->success()
+                    ->send();
+
+                $lottery->prizes()->createMany($data['prizes']);
+                $total_prizes = count($data['prizes']);
+                Notification::make()
+                    ->title('Premios registrados')
+                    ->body("Se han registrado {$total_prizes} premios en la rifa ({$lottery->name})")
+                    ->success()
+                    ->send();
+
                 $total_tickets = $data['total_tickets'];
 
                 $tickets = array_map(function ($n) use ($lottery) {
@@ -30,8 +44,8 @@ class CreateLottery extends CreateRecord
                 $lottery->tickets()->insert($tickets);
 
                 Notification::make()
-                    ->title('Rifa creada')
-                    ->body("La rifa ha sido registrada con {$total_tickets} boletos")
+                    ->title('Boletos registrados')
+                    ->body("Se han registrado {$total_tickets} boletos para la rifa ({$lottery->name})")
                     ->success()
                     ->send();
 

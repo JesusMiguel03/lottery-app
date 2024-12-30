@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\LotteryResource\Actions\PrizeModalAction;
 use App\Filament\Resources\LotteryResource\Actions\SellTicketsAction;
 use App\Filament\Resources\LotteryResource\Actions\TicketPaymentAction;
 use App\Filament\Resources\LotteryResource\Pages;
@@ -10,6 +11,8 @@ use Carbon\Carbon;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Fieldset;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -81,6 +84,7 @@ class LotteryResource extends Resource
                     ->step(1)
                     ->rules('required')
                     ->markAsRequired()
+                    ->live()
                     ->lt('total_tickets')
                     ->validationAttribute(label: 'máximo de ganadores')
                     ->validationMessages([
@@ -127,6 +131,35 @@ class LotteryResource extends Resource
                         $set('ticket_value', $value > 0 ? $calc : 0);
                     })
                     ->hiddenOn('edit'),
+                Repeater::make('prizes')
+                    ->label('Premios')
+                    ->schema([
+                        Fieldset::make('Premio')
+                            ->columns(3)
+                            ->schema([
+                                TextInput::make('name')
+                                    ->label('Nombre')
+                                    ->placeholder('Ej: Moto Bera')
+                                    ->required(),
+                                TextInput::make('quantity')
+                                    ->label('Cantidad')
+                                    ->placeholder('Ej: 1')
+                                    ->required(),
+                                TextInput::make('value')
+                                    ->label('Valor')
+                                    ->placeholder('Ej: 700')
+                                    ->suffix('$')
+                                    ->required()
+                            ])
+                    ])
+                    ->columnSpanFull()
+                    ->hidden(fn(Get $get) => empty($get('total_winners')))
+                    ->maxItems(fn(Get $get) => $get('total_winners') ?? 0),
+                Placeholder::make('prize_notes')
+                    ->label('Notas')
+                    ->content('Los premios se asignarán en el órden en que fueron definidos')
+                    ->hidden(fn(Get $get) => empty($get('total_winners')))
+                    ->columnSpanFull(),
                 TextInput::make('total_price')
                     ->label('Precio total')
                     ->placeholder('Ej: 100$')
@@ -284,7 +317,8 @@ class LotteryResource extends Resource
                     EditAction::make(),
                     SellTicketsAction::make(),
                     TicketPaymentAction::make()
-                        ->hidden(fn(Lottery $record) => count($record->not_payed_tickets()) === 0)
+                        ->hidden(fn(Lottery $record) => count($record->not_payed_tickets()) === 0),
+                    PrizeModalAction::make()
                 ])
             ])
             ->bulkActions([
