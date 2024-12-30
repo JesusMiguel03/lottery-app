@@ -235,10 +235,12 @@ class ClientResource extends Resource
                                 ->formatStateUsing(fn(Client $record) => $record->get_lotteries_count('monthly')),
                             TextEntry::make('id')
                                 ->label('Total pagado')
-                                ->formatStateUsing(fn(Client $record) => "{$record->get_total_payed()}$"),
+                                ->formatStateUsing(fn(Client $record) => "{$record->get_total_payed()}")
+                                ->suffix('$'),
                             TextEntry::make('id')
                                 ->label('Deuda total')
-                                ->formatStateUsing(fn(Client $record) => "{$record->get_total_debt()}$"),
+                                ->formatStateUsing(fn(Client $record) => "{$record->get_total_debt()}")
+                                ->suffix('$'),
                             TextEntry::make('id')
                                 ->label('Loterías ganadas')
                                 ->formatStateUsing(fn(Client $record) => "{$record->get_lotteries_won()}"),
@@ -246,9 +248,9 @@ class ClientResource extends Resource
                                 ->label('Equivalente en premios')
                                 ->formatStateUsing(
                                     fn(Client $record) =>
-                                    //                                "{$record->get_estimated_prizes_value()}"
-                                    'Pendiente'
-                                ),
+                                    "{$record->get_estimated_prizes_value()}"
+                                )
+                                ->suffix('$'),
                         ])
                     ]),
             ]);

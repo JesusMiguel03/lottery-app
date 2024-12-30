@@ -100,12 +100,11 @@ class Client extends Model
 
     public function get_estimated_prizes_value()
     {
-        // TODO -> Finish this function, it should return the sum of the prizes that the client has won
         return $this->tickets()
-            ->with('lottery', 'lottery.prizes')
-            ->distinct('lottery_id')
             ->where('winner', 1)
-            ->get();
+            ->with('lottery.prizes')
+            ->get()
+            ->sum(fn($ticket) => $ticket->lottery->prizes->sum('value'));
     }
 
     public function get_pending_tickets()
