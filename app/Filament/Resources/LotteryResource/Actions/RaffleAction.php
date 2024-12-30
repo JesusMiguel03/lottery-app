@@ -33,8 +33,10 @@ class RaffleAction extends Action
         Placeholder::make('')
           ->content(function (Lottery $record) {
             $tickets = $record->get_winners();
+            $prizes = $record->prizes;
 
-            $ticketList = $tickets->map(function ($ticket, $index) {
+            $ticketList = $tickets->map(function ($ticket, $index) use ($prizes) {
+              $prize = $prizes[$index];
               ++$index;
               return "<li class='py-2 px-6 border border-neutral-400 rounded-md'>
                         <div class='flex flex-col justify-center items-center'>
@@ -42,6 +44,7 @@ class RaffleAction extends Action
                           <h6 class='text-lg font-semibold'>
                             {$ticket->client->fullname}
                           </h6>
+                          <p>Premio: {$prize->name} ({$prize->value}$)</p>
                           <p>Boleto &num;{$ticket->number}</p>
                         </div>
                     </li>";
