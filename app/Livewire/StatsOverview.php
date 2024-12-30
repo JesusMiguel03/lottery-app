@@ -14,6 +14,7 @@ class StatsOverview extends BaseWidget
     {
         $total_clients = Client::count();
         $total_tickets = Ticket::where('active', 1)->count();
+        $total_payments = Payment::sum('amount');
 
         $montly_payments = Payment::whereMonth('created_at', '=', now()->month)->sum('amount');
         $montly_tickets = Ticket::whereMonth('created_at', '=', now()->month)->count();
@@ -21,6 +22,7 @@ class StatsOverview extends BaseWidget
         return [
             Stat::make('Clientes registrados', $total_clients),
             Stat::make('Boletos totales', $total_tickets),
+            Stat::make('Pagos totales', "{$total_payments} $"),
             Stat::make('Boletos mensuales', $montly_tickets),
             Stat::make('Pagos mensuales', "{$montly_payments} $"),
         ];
