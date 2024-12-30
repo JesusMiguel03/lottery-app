@@ -140,16 +140,44 @@ class LotteryResource extends Resource
                                 TextInput::make('name')
                                     ->label('Nombre')
                                     ->placeholder('Ej: Moto Bera')
-                                    ->required(),
+                                    ->rules(['required', 'min:3', 'max:25', 'regex:/^[a-zA-Z\s]+$/'])
+                                    ->markAsRequired()
+                                    ->validationAttribute('nombre')
+                                    ->validationMessages([
+                                        'required' => 'Debe indicar un nombre',
+                                        'regex' => 'Solo se aceptan letras',
+                                        'min' => 'Debe contener al menos :min caracteres',
+                                        'max' => 'Debe contener máximo :max caracteres',
+                                    ]),
                                 TextInput::make('quantity')
                                     ->label('Cantidad')
                                     ->placeholder('Ej: 1')
-                                    ->required(),
+                                    ->type('number')
+                                    ->numeric()
+                                    ->integer()
+                                    ->step(0.01)
+                                    ->rules(['required', 'min:1', 'max:1000'])
+                                    ->markAsRequired()
+                                    ->validationMessages([
+                                        'required' => "Debe indicar un número",
+                                        'min' => "Debe ser al menos :min",
+                                        'max' => "Debe ser máximo :max",
+                                    ]),
                                 TextInput::make('value')
                                     ->label('Valor')
                                     ->placeholder('Ej: 700')
                                     ->suffix('$')
-                                    ->required()
+                                    ->type('number')
+                                    ->numeric()
+                                    ->integer()
+                                    ->step(0.01)
+                                    ->rules(['required', 'min:1', 'max:1000'])
+                                    ->markAsRequired()
+                                    ->validationMessages([
+                                        'required' => "Debe indicar un número",
+                                        'min' => "Debe ser al menos :min",
+                                        'max' => "Debe ser máximo :max",
+                                    ])
                             ])
                     ])
                     ->columnSpanFull()
@@ -189,8 +217,6 @@ class LotteryResource extends Resource
                     ->disabled()
                     ->suffix('$')
                     ->placeholder('Ej: 100')
-                    ->type('number')
-                    ->rules('required')
                     ->helperText('Este campo mostrará que valor tendrá cada boleto')
                     ->hiddenOn('edit'),
                 Fieldset::make('Duración')
