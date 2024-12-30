@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Fieldset;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
@@ -207,6 +208,10 @@ class LotteryResource extends Resource
                 TextColumn::make('id')
                     ->label('ID')
                     ->sortable(),
+                TextColumn::make('is_active')
+                    ->label('Estado')
+                    ->badge()
+                    ->color(fn(string $state) => $state === 'Activo' ? 'success' : 'danger'),
                 TextColumn::make('name')
                     ->label('Nombre')
                     ->sortable()
@@ -231,6 +236,27 @@ class LotteryResource extends Resource
                     ->label('Duración'),
             ])
             ->filters([
+                Filter::make('is_active')
+                    ->label('Estado')
+                    ->form([
+                        Select::make('is_active')
+                            ->label('Estado')
+                            ->options([
+                                '1' => 'Activo',
+                                '0' => 'Inactivo',
+                            ])
+                            ->placeholder('Seleccione un estado')
+                            ->nullable()
+                    ])
+                    ->query(fn(Builder $query, array $data) => $query->when(
+                        in_array($data['is_active'], ['0', '1']),
+                        fn(Builder $query) =>
+                        $query->where(
+                            'final_date',
+                            $data['is_active'] === '0' ? '<' : '>',
+                            now()->endOfDay()->format('d/m/Y')
+                        )
+                    )),
                 Filter::make('date')
                     ->label('Fechas')
                     ->form([

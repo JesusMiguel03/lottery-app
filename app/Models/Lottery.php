@@ -64,6 +64,13 @@ class Lottery extends Model
         );
     }
 
+    public function isActive(): Attribute
+    {
+        return Attribute::make(
+            get: fn(string | null $value, array $attributes) => Carbon::now()->between(Carbon::createFromFormat('d/m/Y', $attributes['initial_date']), Carbon::createFromFormat('d/m/Y', $attributes['final_date'])) ? 'Activo' : 'Inactivo'
+        );
+    }
+
     public function tickets()
     {
         return $this->hasMany(Ticket::class);
