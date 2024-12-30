@@ -240,33 +240,46 @@ class LotteryResource extends Resource
             ->columns([
                 TextColumn::make('id')
                     ->label('ID')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('is_active')
                     ->label('Estado')
                     ->badge()
-                    ->color(fn(string $state) => $state === 'Activo' ? 'success' : 'danger'),
+                    ->color(fn(string $state) => $state === 'Activo' ? 'success' : 'danger')
+                    ->toggleable(),
                 TextColumn::make('name')
                     ->label('Nombre')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('description')
                     ->label('Descripción')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('total_winners')
                     ->label('Ganadores')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('total_tickets')
                     ->label('Boletos')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('total_price')
                     ->label('Precio total')
                     ->suffix('$')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('total_payed')
                     ->label('Total pagado')
-                    ->suffix('$'),
+                    ->suffix('$')
+                    ->toggleable(),
+                TextColumn::make('total_prizes_value')
+                    ->label('Valor en premios')
+                    ->suffix('$')
+                    ->toggleable(),
                 TextColumn::make('date_range')
-                    ->label('Duración'),
+                    ->label('Duración')
+                    ->toggleable(),
             ])
             ->filters([
                 Filter::make('is_active')

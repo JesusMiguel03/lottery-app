@@ -71,6 +71,13 @@ class Lottery extends Model
         );
     }
 
+    public function totalPrizesValue(): Attribute
+    {
+        return Attribute::make(
+            get: fn(string | null $value, array $attributes) => $this->prizes->sum('value')
+        );
+    }
+
     public function tickets()
     {
         return $this->hasMany(Ticket::class);
