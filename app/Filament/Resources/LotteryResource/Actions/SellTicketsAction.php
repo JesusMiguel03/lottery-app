@@ -28,6 +28,7 @@ class SellTicketsAction extends Action
     $this->label("Venta de boletos")
       ->icon('heroicon-o-tag')
       ->slideOver()
+      ->hidden(fn(Lottery $record) => count($record->get_winners()) > 0 ? true : null)
       ->modalHeading(fn(Lottery $record) => "Venta de boletos para rifa #{$record->id} ({$record->name})")
       ->form([
         Select::make('client_id')
@@ -113,6 +114,7 @@ class SellTicketsAction extends Action
               ->integer()
               ->step(0.01)
               ->minValue(0.01)
+              ->rules(['required', 'min:0.01', 'max:10000'])
               ->validationMessages([
                 'required' => "Debe indicar un número",
                 'min' => "Debe ser al menos :min",
@@ -128,8 +130,10 @@ class SellTicketsAction extends Action
                 'payment' => 'Pago mòvil',
                 'other' => 'Otros'
               ])
+              ->rules(['required', 'in:usd,bs,payment,other'])
               ->validationMessages([
-                'required' => 'Debe seleccionar alguna de las opciones'
+                'required' => 'Debe seleccionar alguna de las opciones',
+                'in' => 'Debe seleccionar una opción válida'
               ]),
             TextInput::make('ref')
               ->label('Referencia')
@@ -186,20 +190,19 @@ class SellTicketsAction extends Action
           ->send();
 
         $current_total_payed_amount = $total_payed;
-        $tickets->map(function (Ticket $ticket) use ($current_total_payed_amount, $ticket_price, $ref, $type) {
-          $is_payed = $current_total_payed_amount > $ticket_price;
 
-          if (!$is_payed) {
-            return null;
+        $tickets->map(function (Ticket $ticket) use (&$current_total_payed_amount, $ticket_price, $ref, $type) {
+          if ($current_total_payed_amount >= $ticket_price) {
+            $current_total_payed_amount -= $ticket_price;
+
+            $ticket->payment()->create([
+              'amount' => $ticket_price,
+              'ref' => $ref,
+              'type' => $type
+            ]);
           }
-
-          $current_total_payed_amount -= $ticket_price;
-          $ticket->payment()->create([
-            'amount' => $ticket_price,
-            'ref' => $ref,
-            'type' => $type
-          ]);
         });
+
 
         if ($has_payments) {
           $payment_types = [

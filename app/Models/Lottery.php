@@ -115,4 +115,14 @@ class Lottery extends Model
 
         return $this->tickets->count() / $this->total_price;
     }
+
+    public function get_payed_tickets()
+    {
+        return $this->tickets()->whereHas('payment')->get();
+    }
+
+    public function get_winners()
+    {
+        return $this->tickets()->where('winner', true)->with('client')->get();
+    }
 }
