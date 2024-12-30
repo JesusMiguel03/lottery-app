@@ -42,7 +42,7 @@ class Client extends Model
 
     public function get_lotteries()
     {
-        return $this->tickets()->with('lottery')->get()->pluck('lottery.name', 'lottery_id')->unique()->toArray();
+        return $this->tickets()->with('lottery')->get()->unique()->pluck('lottery.name', 'lottery_id')->toArray();
     }
 
     public function get_tickets_count($filter)
@@ -106,5 +106,10 @@ class Client extends Model
             ->distinct('lottery_id')
             ->where('winner', 1)
             ->get();
+    }
+
+    public function get_pending_tickets()
+    {
+        return $this->tickets()->with('lottery')->whereDoesntHave('payment')->get();
     }
 }
