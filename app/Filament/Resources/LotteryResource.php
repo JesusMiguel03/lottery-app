@@ -8,6 +8,7 @@ use App\Filament\Resources\LotteryResource\Actions\SeeSoldTicketsAction;
 use App\Filament\Resources\LotteryResource\Actions\SellTicketsAction;
 use App\Filament\Resources\LotteryResource\Actions\TicketPaymentAction;
 use App\Filament\Resources\LotteryResource\Pages;
+use App\Models\Currency;
 use App\Models\Lottery;
 use Carbon\Carbon;
 use Filament\Actions\Concerns\InteractsWithActions;
@@ -38,7 +39,7 @@ class LotteryResource extends Resource
 
     protected static ?string $label = "Rifas";
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 4;
 
     protected static ?string $navigationIcon = 'heroicon-o-book-open';
 
@@ -209,10 +210,23 @@ class LotteryResource extends Resource
                     ->helperText('Indique el precio total de la rifa (este precio se dividirá entre el total de boletos)')
                     ->afterStateUpdated(function (Get $get, Set $set) {
                         $total_tickets = $get('total_tickets');
+                        if (empty($total_tickets)) {
+                            $set('total_tickets', 1);
+                            $total_tickets = 1;
+                        }
+
                         $value = empty($get('total_price')) ? 0 : $get('total_price');
                         $calc = $value / $total_tickets;
+
+                        $currency = Currency::latest()->first();
+                        if ($currency == null) {
+                            redirect(route('filament.admin.resources.clients.create'));
+                        }
+
                         $set('ticket_value', $value > 0 ? $calc : 0);
+                        $set('none', $value > 0 ? round($calc * $currency->value, 2) : 0);
                     })
+                    ->columnSpanFull()
                     ->hiddenOn('edit'),
                 TextInput::make('ticket_value')
                     ->label('Precio por boleto')
@@ -220,6 +234,13 @@ class LotteryResource extends Resource
                     ->suffix('$')
                     ->placeholder('Ej: 100')
                     ->helperText('Este campo mostrará que valor tendrá cada boleto')
+                    ->hiddenOn('edit'),
+                TextInput::make('none')
+                    ->label('Precio por boleto')
+                    ->disabled()
+                    ->suffix('Bs')
+                    ->placeholder('Ej: 100')
+                    ->helperText('Este campo mostrará que valor tendrá cada boleto usando la tasa de hoy')
                     ->hiddenOn('edit'),
                 Fieldset::make('Duración')
                     ->schema([
@@ -388,5 +409,10 @@ class LotteryResource extends Resource
             'create' => Pages\CreateLottery::route('/create'),
             'edit' => Pages\EditLottery::route('/{record}/edit'),
         ];
+    }
+
+    public static function canCreate(): bool
+    {
+        return Currency::whereDate('created_at', Carbon::today())->exists();
     }
 }

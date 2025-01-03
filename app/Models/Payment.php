@@ -10,11 +10,17 @@ class Payment extends Model
         'amount',
         'ref',
         'type',
-        'ticket_id'
+        'ticket_id',
+        'currency_id'
     ];
 
     public function ticket()
     {
         return $this->belongsTo(Ticket::class);
+    }
+
+    public function currency()
+    {
+        return $this->belongsTo(Currency::class);
     }
 }

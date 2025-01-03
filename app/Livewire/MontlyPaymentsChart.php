@@ -5,8 +5,7 @@ namespace App\Livewire;
 use App\Models\Payment;
 use Carbon\Carbon;
 use Filament\Widgets\ChartWidget;
-use Flowframe\Trend\Trend;
-use Flowframe\Trend\TrendValue;
+use Illuminate\Support\Facades\DB;
 
 class MontlyPaymentsChart extends ChartWidget
 {
@@ -14,20 +13,31 @@ class MontlyPaymentsChart extends ChartWidget
 
     protected function getData(): array
     {
-        $data = Trend::model(Payment::class)
-            ->between(
-                start: now()->startOfYear(),
-                end: now()->endOfYear(),
-            )
-            ->perMonth()
-            ->sum('amount');
+        $data = DB::table('payments')
+            ->select(DB::raw('strftime("%Y-%m", created_at) as month'), DB::raw('SUM(CASE 
+                WHEN type = "bs" OR type = "payment" THEN amount / (SELECT value FROM currencies WHERE id = currency_id) 
+                ELSE amount 
+            END) as total'))
+            ->whereBetween('created_at', [now()->startOfYear(), now()->endOfYear()])
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        $months = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $months[Carbon::now()->format('Y') . '-' . str_pad($i, 2, '0', STR_PAD_LEFT)] = 0;
+        }
+
+        foreach ($data as $value) {
+            $months[$value->month] = $value->total;
+        }
 
         return [
-            'labels' => $data->map(fn(TrendValue $value) => Carbon::createFromFormat('Y-m', $value->date)->translatedFormat('F'))->toArray(),
+            'labels' => array_keys($months),
             'datasets' => [
                 [
-                    'label' => 'Pagos por mes',
-                    'data' => $data->map(fn(TrendValue $value) => $value->aggregate)->toArray(),
+                    'label' => 'Pagos por mes $',
+                    'data' => array_values($months),
                 ]
             ],
         ];
