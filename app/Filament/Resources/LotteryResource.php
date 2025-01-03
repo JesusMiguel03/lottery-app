@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\LotteryResource\Actions\PrizeModalAction;
 use App\Filament\Resources\LotteryResource\Actions\RaffleAction;
+use App\Filament\Resources\LotteryResource\Actions\SeeSoldTicketsAction;
 use App\Filament\Resources\LotteryResource\Actions\SellTicketsAction;
 use App\Filament\Resources\LotteryResource\Actions\TicketPaymentAction;
 use App\Filament\Resources\LotteryResource\Pages;
@@ -356,6 +357,7 @@ class LotteryResource extends Resource
                 ActionGroup::make([
                     EditAction::make(),
                     SellTicketsAction::make(),
+                    SeeSoldTicketsAction::make(),
                     TicketPaymentAction::make()
                         ->hidden(fn(Lottery $record) => count($record->not_payed_tickets()) === 0),
                     PrizeModalAction::make(),

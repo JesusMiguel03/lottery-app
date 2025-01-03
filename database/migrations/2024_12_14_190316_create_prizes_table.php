@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->integer('quantity');
             $table->integer('value');
+            $table->integer('order');
             $table->foreignId('lottery_id')
                 ->constrained()
                 ->cascadeOnDelete()

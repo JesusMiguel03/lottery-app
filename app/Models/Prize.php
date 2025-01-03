@@ -9,6 +9,7 @@ class Prize extends Model
     protected $fillable = [
         'name',
         'quantity',
-        'value'
+        'value',
+        'order'
     ];
 }

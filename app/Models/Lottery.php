@@ -93,7 +93,12 @@ class Lottery extends Model
         return $this->tickets()
             ->whereDoesntHave('payment')
             ->whereHas('client')
-            ->pluck('number', 'id')
+            ->join('clients', 'tickets.client_id', '=', 'clients.id')
+            ->selectRaw("tickets.id as id, number, (clients.name || ' ' || clients.last_name) as client_name")
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [$item->id => "{$item->number} - {$item->client_name}"];
+            })
             ->toArray();
     }
 
@@ -113,7 +118,7 @@ class Lottery extends Model
             return 0;
         }
 
-        return $this->tickets->count() / $this->total_price;
+        return $this->total_price / $this->tickets->count();
     }
 
     public function get_payed_tickets()

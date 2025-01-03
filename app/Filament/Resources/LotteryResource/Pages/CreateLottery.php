@@ -26,7 +26,17 @@ class CreateLottery extends CreateRecord
                     ->success()
                     ->send();
 
-                $lottery->prizes()->createMany($data['prizes']);
+                $orders = range(1, count($data['prizes']));
+                $prizesWithOrders = [];
+
+                foreach ($data['prizes'] as $index => $prize) {
+                    $prizesWithOrders[] = [
+                        ...$prize,
+                        'order' => $orders[$index],
+                    ];
+                }
+
+                $lottery->prizes()->createMany($prizesWithOrders);
                 $total_prizes = count($data['prizes']);
                 Notification::make()
                     ->title('Premios registrados')
@@ -38,7 +48,12 @@ class CreateLottery extends CreateRecord
 
                 $tickets = array_map(function ($n) use ($lottery) {
                     $now = Carbon::now('utc')->toDateTimeString();
-                    return ['number' => $n, 'lottery_id' => $lottery->id, 'created_at' => $now, 'updated_at' => $now];
+                    return [
+                        'number' => $n,
+                        'lottery_id' => $lottery->id,
+                        'created_at' => $now,
+                        'updated_at' => $now
+                    ];
                 }, range(1, $total_tickets));
 
                 $lottery->tickets()->insert($tickets);

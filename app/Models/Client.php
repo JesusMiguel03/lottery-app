@@ -111,4 +111,13 @@ class Client extends Model
     {
         return $this->tickets()->with('lottery')->whereDoesntHave('payment')->get();
     }
+
+    public function get_prizes()
+    {
+        return $this->tickets()
+            ->where('winner', 1)
+            ->with('lottery.prizes')
+            ->get()
+            ->map(fn($ticket) => $ticket->lottery->prizes);
+    }
 }

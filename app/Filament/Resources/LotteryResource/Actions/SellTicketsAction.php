@@ -11,6 +11,7 @@ use App\Models\Lottery;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Notifications\Notification;
@@ -28,7 +29,9 @@ class SellTicketsAction extends Action
     $this->label("Venta de boletos")
       ->icon('heroicon-o-tag')
       ->slideOver()
-      ->hidden(fn(Lottery $record) => count($record->get_winners()) > 0 ? true : null)
+      ->hidden(
+        fn(Lottery $record) => (count($record->get_winners()) > 0 ? true : null) || (empty($record->totalLeft) ? true : null)
+      )
       ->modalHeading(fn(Lottery $record) => "Venta de boletos para rifa #{$record->id} ({$record->name})")
       ->form([
         Select::make('client_id')
@@ -45,7 +48,7 @@ class SellTicketsAction extends Action
           ->options(function (Lottery $record) {
             $tickets = $record->tickets()->with('client')->select('number', 'id', 'client_id')->get();
 
-            $ticket_price = empty($record->total_price) ? 0 : $record->tickets->count() / $record->total_price;
+            $ticket_price = empty($record->total_price) ? 0 : $record->total_price / $record->tickets->count();
             $formatted_tickets = $tickets->mapWithKeys(function ($ticket) use ($ticket_price) {
               $client_name = empty($ticket->client) ? "Disponible {$ticket_price}$" : $ticket->client->fullName;
               return [
@@ -67,7 +70,7 @@ class SellTicketsAction extends Action
           })
           ->afterStateUpdated(function (Lottery $record, Get $get, Set $set) {
             $selected_tickets = $get('tickets');
-            $calc = $record->tickets->count() / $record->total_price * count($selected_tickets);
+            $calc = ($record->total_price / $record->tickets->count()) * count($selected_tickets);
             $set('total_cost', $calc);
           })
           ->live()
@@ -78,7 +81,11 @@ class SellTicketsAction extends Action
             'required' => 'Debe seleccionar al menos un boleto'
           ])
           ->searchable()
-          ->markAsRequired(),
+          ->markAsRequired()
+          ->bulkToggleable(),
+        Toggle::make('add_payment')
+          ->label('Realizar pago')
+          ->live(),
         Fieldset::make('')
           ->schema([
             Placeholder::make('total_cost')
@@ -91,7 +98,7 @@ class SellTicketsAction extends Action
                   return '0$';
                 }
 
-                return number_format($record->tickets->count() / $record->total_price * $selected_tickets) . '$';
+                return number_format(($record->total_price / $record->tickets->count())  * $selected_tickets) . '$';
               }),
             Placeholder::make('total_payed_amount')
               ->label('Monto pagado')
@@ -154,7 +161,7 @@ class SellTicketsAction extends Action
             $tickets = $get('tickets') ?? [];
             $tickets_available = count(array_intersect($record->tickets_left(), $tickets));
 
-            return $tickets_available === 0;
+            return $tickets_available === 0 || empty($get('add_payment'));
           }),
         Placeholder::make('note')
           ->label('Nota')

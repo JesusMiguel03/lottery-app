@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\ClientResource\Actions\SeePrizesAction;
 use App\Filament\Resources\ClientResource\Actions\SeeTicketsAction;
 use App\Filament\Resources\ClientResource\Pages;
 use App\Models\Client;
@@ -172,6 +173,7 @@ class ClientResource extends Resource
                     Tables\Actions\EditAction::make(),
                     ViewAction::make(),
                     SeeTicketsAction::make(),
+                    SeePrizesAction::make()
                 ])
             ])
             ->bulkActions([

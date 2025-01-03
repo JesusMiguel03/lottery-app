@@ -25,11 +25,10 @@ class PrizeModalAction extends Action
           ->content(function (Lottery $record) {
             return new HtmlString("
                                         <ul class='grid grid-cols-1 sm:grid-cols-3 gap-3'>
-                                            {$record->prizes->map(function ($prize,$index) {
-              ++$index;
+                                            {$record->prizes->map(function ($prize) {
               return "<li class='p-4 border border-neutral-400 rounded-md'>
                                         <div class='flex flex-col'>
-                                            <h6 class='font-semibold'>&num;{$index} {$prize->name}</h6>
+                                            <h6 class='font-semibold'>&num;{$prize->order} {$prize->name}</h6>
                                             <p>Cantidad: {$prize->quantity}, Valor: {$prize->value}$</p>
                                         </div>
                                                 </li>";
