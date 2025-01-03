@@ -19,3 +19,8 @@ Notificaciones (whatsapp) (https://wwebjs.dev/guide/creating-your-bot/authentica
     -   Cantidad
     -   Veces
 -   Ganador repetido
+    -   Validar que no se repitan los ganadores
+
+# Dudas
+
+-   ¿Una loteria se puede hacer el mismo dia? En vez de un rango de tiempo
