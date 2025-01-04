@@ -18,7 +18,11 @@ class ValidateCurrency
     public function handle(Request $request, Closure $next): Response
     {
         $currency_route = !$request->routeIs('filament.admin.resources.currencies.index');
-        if ($request->routeIs('filament.admin.pages.home-dashboard') || $request->routeIs('filament.admin.resources.clients.*')) {
+        if (
+            $request->routeIs('filament.admin.auth.*') ||
+            $request->routeIs('filament.admin.pages.home-dashboard') ||
+            $request->routeIs('filament.admin.resources.clients.*')
+        ) {
             return $next($request);
         }
 
