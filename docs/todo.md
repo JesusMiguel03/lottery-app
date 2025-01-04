@@ -7,7 +7,6 @@ Notificaciones (whatsapp) (https://wwebjs.dev/guide/creating-your-bot/authentica
     -   Recordatorio cuando falten 7 y 3 dias para vencer la rifa
     -   Mensaje de ganador
 
--   Cancelar boleto (re-vender)
 -   Check queries perf
 
 # Configuration
