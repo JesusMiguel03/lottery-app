@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\LotteryResource\Actions\CancelTicketsAction;
 use App\Filament\Resources\LotteryResource\Actions\PrizeModalAction;
 use App\Filament\Resources\LotteryResource\Actions\RaffleAction;
 use App\Filament\Resources\LotteryResource\Actions\SeeSoldTicketsAction;
@@ -381,6 +382,7 @@ class LotteryResource extends Resource
                     SeeSoldTicketsAction::make(),
                     TicketPaymentAction::make()
                         ->hidden(fn(Lottery $record) => count($record->not_payed_tickets()) === 0),
+                    CancelTicketsAction::make(),
                     PrizeModalAction::make(),
                     RaffleAction::make()
                 ])
