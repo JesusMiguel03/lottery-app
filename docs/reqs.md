@@ -16,3 +16,9 @@
         -   Pago individual
 
 Premios
+
+# Requisitos técnicos
+
+-   Node v18
+-   Php 8.3.15
+-   Sqlite 3.34.1
