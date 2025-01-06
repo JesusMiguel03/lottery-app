@@ -7,8 +7,6 @@ Notificaciones (whatsapp) (https://wwebjs.dev/guide/creating-your-bot/authentica
     -   Recordatorio cuando falten 7 y 3 dias para vencer la rifa
     -   Mensaje de ganador
 
--   Check queries perf
-
 # Configuration
 
 -   Que dia/dias del mes se cobran los boletos pendientes (configurar fechas), esa misma fecha se manda una notificacion a los deudores (se mandan hasta 3 notificaciones, 1, 2 dias antes y el mismo dia)
