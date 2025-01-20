@@ -212,8 +212,8 @@ class ClientResource extends Resource
                         TextEntry::make('fullName')
                             ->label('Nombre y apellido'),
                         Split::make([
-                            TextEntry::make('document')
-                                ->label('Cédula'),
+                            TextEntry::make('phoneNumber')
+                                ->label('Teléfono'),
                             TextEntry::make('document')
                                 ->label('Cédula'),
                         ]),
