@@ -24,13 +24,18 @@ class SeeSoldTicketsAction extends Action
         CheckboxList::make('tickets')
           ->label('Boletos')
           ->options(function (Lottery $record) {
-            $tickets = $record->tickets()->whereHas('client')->with('client')->select('number', 'id', 'client_id')->get();
+            $tickets = $record->tickets()
+              ->whereHas('client')
+              ->with('client')
+              ->select('number', 'id', 'client_id')
+              ->get();
 
-            $ticket_price = empty($record->total_price) ? 0 : $record->total_price / $record->tickets->count();
-            $formatted_tickets = $tickets->mapWithKeys(function ($ticket) use ($ticket_price) {
+            $formatted_tickets = $tickets->mapWithKeys(function ($ticket) {
               $client_name = $ticket->client->fullName;
+              $payed = $ticket->payment->amount;
+              $currency_icon = in_array($ticket->payment->type, ['bs', 'payment']) ? 'Bs' : '$';
               return [
-                $ticket->id => "{$ticket->number} - {$client_name} ({$ticket_price}$)"
+                $ticket->id => "{$ticket->number} - {$client_name} ({$payed} {$currency_icon})"
               ];
             })->toArray();
 
