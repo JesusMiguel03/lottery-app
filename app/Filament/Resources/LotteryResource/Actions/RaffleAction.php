@@ -4,7 +4,11 @@ namespace App\Filament\Resources\LotteryResource\Actions;
 
 use Filament\Tables\Actions\Action;
 use App\Models\Lottery;
+use App\Models\Ticket;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
@@ -24,9 +28,14 @@ class RaffleAction extends Action
       ->modalHeading(function (Lottery $record) {
         $lottery_id = $record->id;
         $lottery_name = $record->name;
-        $payed_tickets = count($record->get_payed_tickets()->pluck('number', 'id')->toArray());
+        $payed_tickets = count(
+          $record->get_payed_tickets()
+            ->pluck('number', 'id')
+            ->toArray()
+        );
+        $total_tickets = $record->tickets()->count();
 
-        return "Sorteo de boletos para rifa #{$lottery_id} ({$lottery_name}) - (Boletos pagados: {$payed_tickets})";
+        return "Sorteo de boletos para rifa #{$lottery_id} ({$lottery_name}) - (Boletos pagados: {$payed_tickets}/{$total_tickets})";
       })
       ->form([
         // Winners
@@ -58,30 +67,59 @@ class RaffleAction extends Action
           })->columnSpanFull(),
 
         // Payed tickets
-        Placeholder::make('')
-          ->content(function (Lottery $record) {
-            $tickets = $record->get_payed_tickets()->pluck('number', 'id')->toArray();
+        Repeater::make('selected_tickets')
+          ->label('Seleccionar boletos ganadores')
+          ->schema([
+            Select::make('ticket')
+              ->label('Boletos')
+              ->rules([
+                'required'
+              ])
+              ->validationMessages([
+                'required' => 'Debe seleccionar una opción',
+                'in' => 'Debe seleccionar una opción de la lista'
+              ])
+              ->searchable()
+              ->in(
+                values: fn(Lottery $record) =>
+                $record->get_payed_tickets()->pluck('id')->toArray()
+              )
+              ->options(
+                fn(Lottery $record) =>
+                $record->get_payed_tickets()->pluck('ticket_owner_name', 'id')->toArray()
+              )
+              ->disableOptionWhen(function (string $value, Get $get) {
+                $selected_tickets = collect($get('../') ?? [])
+                  ->pluck('ticket')
+                  ->filter()
+                  ->map(fn($item) => (int) $item)
+                  ->toArray();
 
-            $ticketList = collect($tickets)->map(function ($ticket) {
-              return "<li class='py-2 px-6 border border-neutral-400 rounded-md'>
-                        <p>Boleto &num;{$ticket}</p>
-                    </li>";
-            })->implode('');
-
-            return new HtmlString("
-              <ul class='flex flex-wrap justify-center gap-3'>
-                  {$ticketList}
-              </ul>
-            ");
-          })->columnSpanFull()
-          ->hidden(fn(Lottery $record) => count($record->get_winners()) > 0),
+                return in_array((int) $value, $selected_tickets);
+              })
+          ])
+          ->itemLabel(function () {
+            static $custom_index = 1;
+            return "Número ganador: #" . $custom_index++;
+          })
+          ->addActionLabel('Agregar ganador')
+          ->defaultItems(fn(Lottery $record) => $record->get_payed_tickets()->count())
+          ->maxItems(fn(Lottery $record) => $record->get_payed_tickets()->count())
+          ->reorderable(false)
+          ->deletable(false)
+          ->columnSpanFull()
+          ->hidden(fn(Lottery $record) => count($record->get_winners()) > 0)
       ])
-      ->modalSubmitActionLabel('Sortear')
+      ->modalSubmitActionLabel('Registrar ganadores')
       ->modalSubmitAction(
         fn(Lottery $record) =>
         count($record->get_winners()) === 0 ? null : false
       )
-      ->action(function (Lottery $record) {
+      ->action(function (Lottery $record, array $data) {
+        $flat_data = array_map(
+          fn($item) => $item['ticket'],
+          $data['selected_tickets']
+        );
         $tickets = $record->get_payed_tickets();
         $tickets_missing = $record->total_winners - count($tickets);
 
@@ -95,9 +133,19 @@ class RaffleAction extends Action
           return;
         }
 
-        $tickets->random($record->total_winners)->each(function ($ticket) {
-          $ticket->update(['winner' => true]);
-        });
+        Ticket::with('client')
+          ->findMany($flat_data)
+          ->map(function ($ticket, $index) use ($record) {
+            $ticket->update(['winner' => true]);
+
+            $current_index = ++$index;
+
+            Notification::make()
+              ->title(Str::markdown("Ganador **#{$current_index}** seleccionado"))
+              ->body(Str::markdown("Se ha seleccionado al cliente **{$ticket->client->fullName}** como ganador **#{$current_index}** de la rifa **#{$record->id} ({$record->name})**"))
+              ->success()
+              ->send();
+          });
 
         Notification::make()
           ->title('Ganadores seleccionados')

@@ -30,4 +30,9 @@ class Ticket extends Model
     {
         return $this->belongsTo(Lottery::class);
     }
+
+    public function getTicketOwnerNameAttribute()
+    {
+        return "#{$this->number}. {$this->client->fullName}";
+    }
 }
