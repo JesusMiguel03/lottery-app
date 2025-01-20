@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 
@@ -33,6 +34,38 @@ class Client extends Model
         return Attribute::make(
             get: fn(string | null $value, array $attributes): string => $attributes['code'] . $attributes['phone']
         );
+    }
+
+    public function getPendingTicketsJson()
+    {
+        $tickets = $this->tickets()
+            ->with(['lottery' => function ($query) {
+                $query->select(['id', 'name', 'total_tickets', 'total_price', 'initial_date', 'final_date']);
+            }])
+            ->whereDoesntHave('payment')
+            ->select(['number', 'lottery_id'])
+            ->get()
+            ->toArray();
+
+        $processed_tickets = [];
+        foreach ($tickets as $ticket) {
+            $ticket_price = round($ticket['lottery']['total_price'] / $ticket['lottery']['total_tickets'], 2);
+            $processed_tickets[] = [
+                'number' => $ticket['number'],
+                'name' => $ticket['lottery']['name'],
+                'price' => $ticket_price,
+                'initial_date' => Carbon::createFromFormat(
+                    'd/m/Y',
+                    $ticket['lottery']['initial_date']
+                )->translatedFormat('l, d M Y'),
+                'final_date' => Carbon::createFromFormat(
+                    'd/m/Y',
+                    $ticket['lottery']['final_date']
+                )->translatedFormat('l, d M Y')
+            ];
+        }
+
+        return $processed_tickets;
     }
 
     public function tickets()

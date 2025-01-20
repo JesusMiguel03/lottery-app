@@ -22,3 +22,7 @@ Premios
 -   Node v18
 -   Php 8.3.15
 -   Sqlite 3.34.1
+
+    ## Notas
+
+    -   Esperar 2-3 minutos despues de ejecutar "node resources/js/ws_bot.js numero_tlf 'mensaje'"

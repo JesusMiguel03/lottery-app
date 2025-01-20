@@ -77,7 +77,10 @@ class RaffleAction extends Action
           ->hidden(fn(Lottery $record) => count($record->get_winners()) > 0),
       ])
       ->modalSubmitActionLabel('Sortear')
-      ->modalSubmitAction(fn(Lottery $record) => count($record->get_winners()) === 0 ? null : false)
+      ->modalSubmitAction(
+        fn(Lottery $record) =>
+        count($record->get_winners()) === 0 ? null : false
+      )
       ->action(function (Lottery $record) {
         $tickets = $record->get_payed_tickets();
         $tickets_missing = $record->total_winners - count($tickets);
