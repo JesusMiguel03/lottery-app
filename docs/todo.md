@@ -1,11 +1,8 @@
-Notificaciones (whatsapp) (https://wwebjs.dev/guide/creating-your-bot/authentication.html#remote-stores)
+# WIP
 
-# TODO
-
--   Whatsapp
-
-    -   Recordatorio cuando falten 7 y 3 dias para vencer la rifa
-    -   Mensaje de ganador
+-   Enviar mensaje de deuda (sendwhatsappmessages) y ganador (raffleaction) automatico
+-   Cambiar raffleaction -> seleccion manual de ganadores
+-   Modificar para que la notificacion de ganadores / perdedores se envie 1 sola vez
 
 # Configuration
 
