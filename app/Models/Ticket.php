@@ -10,6 +10,8 @@ class Ticket extends Model
         'active',
         'winner',
         'number',
+        'alerts',
+        'notified_at',
         'client_id',
         'lottery_id',
         'created_at',

@@ -38,15 +38,25 @@ class CancelTicketsAction extends Action
               : 'Boletos';
           })
           ->options(function (Lottery $record) {
-            $tickets = $record->tickets()->with('client')->where('client_id', '!=', null)->whereDoesntHave('payment')->select('number', 'id', 'client_id')->get();
+            $tickets = $record->tickets()
+              ->with('client')
+              ->where('client_id', '!=', null)
+              ->whereDoesntHave('payment')
+              ->select('number', 'id', 'client_id', 'alerts')
+              ->get();
 
             $ticket_price = empty($record->total_price) ? 0 : $record->total_price / $record->tickets->count();
-            $formatted_tickets = $tickets->mapWithKeys(function ($ticket) use ($ticket_price) {
-              $client_name = empty($ticket->client) ? "Disponible {$ticket_price}$" : $ticket->client->fullName;
-              return [
-                $ticket->id => "{$ticket->number} - {$client_name}"
-              ];
-            })->toArray();
+            $formatted_tickets = $tickets->mapWithKeys(
+              function ($ticket) use ($ticket_price) {
+                $alerts = $ticket->alerts ?? 0;
+                $client_name = empty($ticket->client)
+                  ? "Disponible {$ticket_price}$"
+                  : "{$ticket->client->fullName} ({$alerts})";
+                return [
+                  $ticket->id => "{$ticket->number} - {$client_name}"
+                ];
+              }
+            )->toArray();
 
             return $formatted_tickets;
           })
@@ -57,7 +67,8 @@ class CancelTicketsAction extends Action
           ])
           ->searchable()
           ->markAsRequired()
-          ->bulkToggleable(),
+          ->bulkToggleable()
+          ->helperText(fn() => new HtmlString(Str::markdown("El número que se encuentra entre () en los boletos representa la cantidad de veces que fue notificado el cliente para realizar el pago pendiente de los mismos, si llega a **3** se considera que puede ser **cancelado**, **queda a consideración del adminitrador**."))),
         Placeholder::make('note')
           ->label('Nota')
           ->content(function () {
@@ -79,7 +90,6 @@ class CancelTicketsAction extends Action
 						");
           })
       ])
-      ->modalSubmitAction(fn(Lottery $record) => count($record->tickets_left()) >= 1 ? null : false)
       ->action(function (Lottery $record, array $data) {
         $record->tickets()->whereIn('id', $data['tickets'])->update(['client_id' => null]);
 

@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Client;
+use App\Models\Ticket;
 use Illuminate\Console\Command;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\Exception\ProcessFailedException;
@@ -48,6 +49,7 @@ class SendWhatsappMessages extends Command
         $total_clients = count($clients);
         $this->info("Clientes con boletos por pagar:",  $total_clients);
 
+        $tickets = [];
         $time = now()->hour;
         $app_name = config('app.name');
         $salute = $time >= 12 && $time <= 17
@@ -61,8 +63,12 @@ class SendWhatsappMessages extends Command
             $ticket_numbers = [];
 
             foreach ($client['tickets'] as $ticket) {
+                array_push($tickets, $ticket['number']);
                 $total_debt = round($total_debt + $ticket['price'], 2);
-                array_push($ticket_numbers, 'Rifa: ' . $ticket['name'] . ', boleto: ' . $ticket['number']);
+                array_push(
+                    $ticket_numbers,
+                    'Rifa: ' . $ticket['name'] . ', boleto: ' . $ticket['number']
+                );
             }
 
             $ticket_numbers = implode(', ', $ticket_numbers);
@@ -87,6 +93,8 @@ class SendWhatsappMessages extends Command
 
             $this->info("Mensaje enviado a cliente:", $client['client_name']);
         }
+
+        Ticket::whereIn('id', $tickets)->increment('alerts');
 
         $this->info('Mensajes enviados exitosamente');
 

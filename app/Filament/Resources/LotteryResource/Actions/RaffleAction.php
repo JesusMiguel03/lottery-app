@@ -136,7 +136,10 @@ class RaffleAction extends Action
         Ticket::with('client')
           ->findMany($flat_data)
           ->map(function ($ticket, $index) use ($record) {
-            $ticket->update(['winner' => true]);
+            $ticket->update([
+              'winner' => true,
+              'notified_at' => now()
+            ]);
 
             $current_index = ++$index;
 

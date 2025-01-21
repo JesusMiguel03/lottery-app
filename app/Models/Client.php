@@ -43,7 +43,7 @@ class Client extends Model
                 $query->select(['id', 'name', 'total_tickets', 'total_price', 'initial_date', 'final_date']);
             }])
             ->whereDoesntHave('payment')
-            ->select(['number', 'lottery_id'])
+            ->select(['id', 'number', 'lottery_id'])
             ->get()
             ->toArray();
 
@@ -51,6 +51,7 @@ class Client extends Model
         foreach ($tickets as $ticket) {
             $ticket_price = round($ticket['lottery']['total_price'] / $ticket['lottery']['total_tickets'], 2);
             $processed_tickets[] = [
+                'id' => $ticket['id'],
                 'number' => $ticket['number'],
                 'name' => $ticket['lottery']['name'],
                 'price' => $ticket_price,

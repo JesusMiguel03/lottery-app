@@ -18,6 +18,10 @@ return new class extends Migration
             $table->integer('number');
             $table->boolean('winner')
                 ->default(false);
+            $table->dateTime('notified_at')
+                ->nullable();
+            $table->integer('alerts')
+                ->default(0);
             $table->foreignId('client_id')
                 ->nullable()
                 ->constrained()
