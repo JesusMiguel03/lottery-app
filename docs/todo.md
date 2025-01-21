@@ -1,8 +1,12 @@
 # WIP
 
 -   Enviar mensaje de deuda (sendwhatsappmessages) y ganador (raffleaction) automatico
--   Cambiar raffleaction -> seleccion manual de ganadores
--   Modificar para que la notificacion de ganadores / perdedores se envie 1 sola vez
+
+    -   SendWhatsappMessages -> se notifica 3 dias antes
+
+        -   Añadir opción de notificar manualmente
+
+    -   SendWhatsappMessagesToWinners -> se notifica despues de guardar a los ganadores
 
 # Configuration
 
