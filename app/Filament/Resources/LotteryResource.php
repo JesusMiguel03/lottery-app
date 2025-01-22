@@ -3,6 +3,8 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\LotteryResource\Actions\CancelTicketsAction;
+use App\Filament\Resources\LotteryResource\Actions\NotifyDebtorClientsAction;
+use App\Filament\Resources\LotteryResource\Actions\NotifyWinnerClientsAction;
 use App\Filament\Resources\LotteryResource\Actions\PrizeModalAction;
 use App\Filament\Resources\LotteryResource\Actions\RaffleAction;
 use App\Filament\Resources\LotteryResource\Actions\SeeSoldTicketsAction;
@@ -283,6 +285,7 @@ class LotteryResource extends Resource
 
     public static function table(Table $table): Table
     {
+        // Lottery::latest()->first()->update(['final_date' => '21/01/2025']);
         return $table
             ->modifyQueryUsing(function (Builder $query) {
                 return $query->with('tickets');
@@ -295,7 +298,7 @@ class LotteryResource extends Resource
                 TextColumn::make('is_active')
                     ->label('Estado')
                     ->badge()
-                    ->color(fn(string $state) => $state === 'Activo' ? 'success' : 'danger')
+                    ->color(fn(string $state) => $state === 'Disponible' ? 'success' : 'danger')
                     ->toggleable(),
                 TextColumn::make('name')
                     ->label('Nombre')
@@ -384,6 +387,8 @@ class LotteryResource extends Resource
                         ->hidden(fn(Lottery $record) => count($record->not_payed_tickets()) === 0),
                     CancelTicketsAction::make(),
                     PrizeModalAction::make(),
+                    NotifyDebtorClientsAction::make(),
+                    NotifyWinnerClientsAction::make(),
                     RaffleAction::make()
                 ])
             ])

@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->boolean('active')
                 ->default(true);
+            $table->integer('order')
+                ->nullable();
             $table->integer('number');
             $table->boolean('winner')
                 ->default(false);

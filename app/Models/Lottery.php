@@ -11,6 +11,7 @@ class Lottery extends Model
     protected $fillable = [
         'name',
         'description',
+        'finished_at',
         'total_winners',
         'total_tickets',
         'initial_date',
@@ -67,7 +68,7 @@ class Lottery extends Model
     public function isActive(): Attribute
     {
         return Attribute::make(
-            get: fn(string | null $value, array $attributes) => Carbon::now()->between(Carbon::createFromFormat('d/m/Y', $attributes['initial_date']), Carbon::createFromFormat('d/m/Y', $attributes['final_date'])) ? 'Activo' : 'Inactivo'
+            get: fn(string | null $value, array $attributes) => Carbon::now()->between(Carbon::createFromFormat('d/m/Y', $attributes['initial_date']), Carbon::createFromFormat('d/m/Y', $attributes['final_date'])) ? 'Disponible' : 'No disponible'
         );
     }
 

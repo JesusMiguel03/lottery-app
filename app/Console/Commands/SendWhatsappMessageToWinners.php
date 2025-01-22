@@ -35,6 +35,8 @@ class SendWhatsappMessageToWinners extends Command
         $start = microtime(true);
 
         $lottery = Lottery::select(['name'])->find($lottery_id)->toArray();
+
+        $this->info("Obteniendo ganadores...");
         $winners = Client::whereHas('tickets', function ($query) use ($lottery_id) {
             $query->whereHas('payment')
                 ->where('winner', true)
@@ -43,8 +45,9 @@ class SendWhatsappMessageToWinners extends Command
                     $query->where('id', $lottery_id);
                 });
         })
-            ->with(['tickets' => function ($query) {
+            ->with(['tickets' => function ($query) use ($lottery_id) {
                 $query->where('winner', true)
+                    ->where('lottery_id', $lottery_id)
                     ->with(['lottery' => function ($query) {
                         $query->select(['id', DB::raw('name as lottery_name')]);
                     }]);
@@ -72,6 +75,9 @@ class SendWhatsappMessageToWinners extends Command
                 return $data;
             });
 
+        $this->info("Clientes encontrados");
+        $this->info("Obteniendo resto de clientes...");
+
         $loosers = Client::whereHas('tickets', function ($query) {
             $query->whereHas('payment')
                 ->where('winner', false)
@@ -87,6 +93,7 @@ class SendWhatsappMessageToWinners extends Command
             ->get()
             ->toArray();
 
+        $this->info("Clientes encontrados");
         $this->info("Clientes ganadores:",  count($winners));
         $this->info("Clientes totales:", count($winners) + count($loosers));
 
@@ -96,6 +103,7 @@ class SendWhatsappMessageToWinners extends Command
             ? 'Buenas tardes'
             : ($time >= 18 ? 'Buenas noches' : 'Buenos días');
 
+        $this->info("Iniciando envío de mensaje a ganadores...");
         foreach ($loosers as $key => $client) {
             $chatId = substr($client['client_phone'], 1);
 
@@ -119,7 +127,9 @@ class SendWhatsappMessageToWinners extends Command
 
             $this->info("Mensaje enviado a cliente:", $client['client_name']);
         }
+        $this->info("Envío finalizado");
 
+        $this->info(string: "Iniciando envío de mensaje al resto de clientes...");
         foreach ($winners as $key => $client) {
             $chatId = substr($client['client_phone'], 1);
             $tickets = $client['tickets'];
@@ -146,6 +156,7 @@ class SendWhatsappMessageToWinners extends Command
             $this->info("Mensaje enviado a cliente:", $client['client_name']);
         }
 
+        $this->info("Envío finalizado");
         $this->info('Mensajes enviados exitosamente');
 
         $end = microtime(true);

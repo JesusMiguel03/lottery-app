@@ -6,26 +6,41 @@ const client = new Client({
     authStrategy: new LocalAuth(),
 });
 
-client.once("ready", () => {
-    console.log("¡Se ha establecido la conexión con whatsapp web!");
-    const chatId = process.argv[2];
-    const message = process.argv[3];
-    send_message(chatId, message);
-});
+client.initialize();
 
 client.on("qr", (qr) => {
     qrcode.generate(qr, { small: true });
 });
 
-client.initialize();
+client.once("ready", () => {
+    console.log("¡Se ha establecido la conexión con whatsapp web!");
+    const chatId = process.argv[2];
+    const message = process.argv[3];
+    console.log("Enviando mensaje");
+    send_message(chatId, message);
+});
+
+client.on("authenticated", () => {
+    console.log("Sesión iniciada");
+});
+
+client.on("disconnected", (reason) => {
+    console.log("Se desconectó: ", reason);
+});
+
+client.on("auth_failure", (message) => {
+    console.log("Error al autenticar:", message);
+});
 
 async function send_message(chatId, message) {
     try {
+        console.time("Tiempo transcurrido");
         const chat = await client.getChatById("58" + chatId + "@c.us");
         await chat.sendMessage(message);
 
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
+        console.timeEnd("Tiempo transcurrido");
         process.exit(0);
     } catch (error) {
         console.error("Hubo un error al enviar el mensaje", error);

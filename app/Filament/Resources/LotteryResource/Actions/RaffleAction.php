@@ -5,11 +5,14 @@ namespace App\Filament\Resources\LotteryResource\Actions;
 use Filament\Tables\Actions\Action;
 use App\Models\Lottery;
 use App\Models\Ticket;
+use Exception;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Get;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
@@ -24,7 +27,11 @@ class RaffleAction extends Action
     $this->label(fn(Lottery $record) => count($record->get_winners()) === 0 ? "Realizar sorteo" : 'Ver ganadores')
       ->icon(fn(Lottery $record) => count($record->get_winners()) === 0 ? 'heroicon-o-play' : 'heroicon-o-star')
       ->slideOver()
-      ->hidden(fn(Lottery $record) => !($record->final_date === now()->format('d/m/Y') && count($record->get_payed_tickets()) > 0))
+      ->hidden(
+        fn(Lottery $record) =>
+        !($record->final_date === now()->format('d/m/Y') &&
+          count($record->get_payed_tickets()) > 0)
+      )
       ->modalHeading(function (Lottery $record) {
         $lottery_id = $record->id;
         $lottery_name = $record->name;
@@ -45,7 +52,7 @@ class RaffleAction extends Action
             $prizes = $record->prizes;
 
             $ticketList = $tickets->map(function ($ticket, $index) use ($prizes) {
-              $prize = $prizes[$index];
+              $prize = $prizes[$ticket->order - 1];
               ++$index;
               return "<li class='py-2 px-6 border border-neutral-400 rounded-md'>
                         <div class='flex flex-col justify-center items-center'>
@@ -136,12 +143,12 @@ class RaffleAction extends Action
         Ticket::with('client')
           ->findMany($flat_data)
           ->map(function ($ticket, $index) use ($record) {
+            $current_index = ++$index;
             $ticket->update([
               'winner' => true,
-              'notified_at' => now()
+              'notified_at' => now(),
+              'order' => $current_index
             ]);
-
-            $current_index = ++$index;
 
             Notification::make()
               ->title(Str::markdown("Ganador **#{$current_index}** seleccionado"))
@@ -150,11 +157,36 @@ class RaffleAction extends Action
               ->send();
           });
 
+        $record->update(['finished_at' => now()]);
+
         Notification::make()
           ->title('Ganadores seleccionados')
           ->body(Str::markdown("Se han seleccionado los ganadores de la rifa #{$record->id} ({$record->name}), un total de ({$record->total_winners}) clientes ganaron"))
           ->success()
           ->send();
+
+        try {
+          Artisan::call("ws:winners {$record->id}");
+          Notification::make()
+            ->title('Ganadores seleccionados')
+            ->body(Str::markdown("Se han seleccionado los ganadores de la rifa #{$record->id} ({$record->name}), un total de ({$record->total_winners}) clientes ganaron"))
+            ->success()
+            ->send();
+        } catch (Exception $e) {
+          $logFilePath = public_path('logs/error_log.txt');
+
+          if (!File::exists(public_path('logs'))) {
+            File::makeDirectory(public_path('logs'), 0755, true);
+          }
+
+          File::append($logFilePath, now() . ' - ' . '[RaffleAction]' . ' ' . $e->getMessage() . PHP_EOL);
+
+          Notification::make()
+            ->title('Ocurrió un error')
+            ->body(Str::markdown("No se pudo notificar a los clientes ganadores, por favor seleccione la rifa y haga clic en la acción (**Notificar a ganadores**) para notificarles."))
+            ->danger()
+            ->send();
+        }
       });
   }
 }
