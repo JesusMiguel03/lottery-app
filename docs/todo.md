@@ -1,12 +1,11 @@
 # WIP
 
--   Enviar mensaje de deuda (sendwhatsappmessages) y ganador (raffleaction) automatico
+-   Dashboard
+    -   Últimos n ganadores con filtro
+    -   Premios del mes
+-   Enviar mensaje de deuda (sendwhatsappmessages) usando un cron
 
     -   SendWhatsappMessages -> se notifica 3 dias antes
-
-        -   Añadir opción de notificar manualmente
-
-    -   SendWhatsappMessagesToWinners -> se notifica despues de guardar a los ganadores
 
 # Configuration
 
@@ -14,7 +13,3 @@
     -   Configurar cuantos dias con anterioridad (2 configurables, el tercero es el mismo dia de vencido)
 -   Ganador repetido
     -   Validar que no se repitan los ganadores
-
-# Dudas
-
--   ¿Una loteria se puede hacer el mismo dia? En vez de un rango de tiempo
