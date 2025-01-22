@@ -42,7 +42,7 @@ class CancelTicketsAction extends Action
               ->with('client')
               ->where('client_id', '!=', null)
               ->whereDoesntHave('payment')
-              ->select('number', 'id', 'client_id', 'alerts')
+              ->select(['number', 'id', 'client_id', 'alerts'])
               ->get();
 
             $ticket_price = empty($record->total_price) ? 0 : $record->total_price / $record->tickets->count();

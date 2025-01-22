@@ -63,7 +63,7 @@ class SendWhatsappMessages extends Command
             $ticket_numbers = [];
 
             foreach ($client['tickets'] as $ticket) {
-                array_push($tickets, $ticket['number']);
+                array_push($tickets, $ticket['id']);
                 $total_debt = round($total_debt + $ticket['price'], 2);
                 array_push(
                     $ticket_numbers,
