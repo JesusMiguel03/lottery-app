@@ -6,7 +6,7 @@ use App\Models\Ticket;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 
-class ClientNotified extends Command
+class TicketNotified extends Command
 {
     /**
      * The name and signature of the console command.
@@ -32,18 +32,20 @@ class ClientNotified extends Command
             File::makeDirectory(public_path('logs'), 0755, true);
         }
 
+        $ticketIdsAsString = $this->argument('ticketId');
+        $ticketIds = explode(', ', $this->argument('ticketId'));
         try {
-            $ticketId = $this->argument('ticketId');
-            $ticket = Ticket::find($ticketId);
+            $tickets = Ticket::findMany($ticketIds);
 
-            if (!$ticket) {
-                File::append($logFilePath, now() . ' - ' . '[ClientNotified]' . ' ' . "Boleto {$ticketId} no encontrado" . PHP_EOL);
-                $this->error("Ticket with ID {$ticketId} not found.");
+            if ($tickets->isEmpty()) {
+                File::append($logFilePath, now() . ' - ' . '[ClientNotified]' . ' ' . "Boletos ({$ticketIdsAsString}) no encontrados" . PHP_EOL);
+                $this->error("Boleto ({$ticketIdsAsString}) no encontrados.");
                 return 1;
             }
 
-            $ticket->update(['notified_at' => now()]);
-            $this->info("Boleto {$ticket->number} notificado");
+            Ticket::whereIn('id', $ticketIds)
+                ->update(['notified_at' => now()]);
+            $this->info("Boletos ({$ticketIdsAsString}) notificados");
             return 0;
         } catch (\Exception $e) {
             File::append($logFilePath, now() . ' - ' . '[ClientNotified]' . ' ' . $e->getMessage() . PHP_EOL);

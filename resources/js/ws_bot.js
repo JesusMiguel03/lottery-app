@@ -5,6 +5,10 @@ const { Client, LocalAuth } = pkg;
 
 const client = new Client({
     authStrategy: new LocalAuth(),
+    // puppeteer: {
+    //     headless: false,
+    //     args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    // },
 });
 
 client.initialize();
@@ -35,12 +39,13 @@ client.on("auth_failure", (message) => {
 
 client.on("message_ack", (ack) => {
     const messageStatus = ack.ack;
-    const ticketId = process.argv[4];
+    const ticketId = process.argv[4].split(", ");
 
     if (messageStatus >= 1) {
         exec(
             `php artisan ticket_notified ${ticketId}`,
             (error, stdout, stderr) => {
+                console.log("Notificación");
                 const regex = /Boleto \d+ notificado/;
                 if (regex.test(stdout)) {
                     console.log("Comando ejecutado");
@@ -71,7 +76,7 @@ async function send_message(chatId, message) {
         const chat = await client.getChatById("58" + chatId + "@c.us");
         await chat.sendMessage(message);
 
-        await new Promise((resolve) => setTimeout(resolve, 4000));
+        await new Promise((resolve) => setTimeout(resolve, 6000));
 
         console.timeEnd("Tiempo transcurrido");
         process.exit(0);

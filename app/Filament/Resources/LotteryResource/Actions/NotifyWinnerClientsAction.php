@@ -6,9 +6,10 @@ use Filament\Tables\Actions\Action;
 use App\Models\Lottery;
 use Exception;
 use Filament\Notifications\Notification;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use Symfony\Component\Process\Process;
+use Symfony\Component\Process\Exception\ProcessFailedException;
 
 class NotifyWinnerClientsAction extends Action
 {
@@ -27,7 +28,24 @@ class NotifyWinnerClientsAction extends Action
         $clients = $record->getWinners()->count();
 
         try {
-          Artisan::call("ws:winners {$record->id}");
+          $process = new Process(['php', 'artisan', 'ws:winners', $record->id], base_path());
+          $process->setTimeout(300);
+          $process->run(function ($type, $buffer) {
+            $logFilePath = public_path('logs/notification_log.txt');
+
+            if (!File::exists(public_path('logs'))) {
+              File::makeDirectory(public_path('logs'), 0755, true);
+            }
+            if (Process::ERR === $type) {
+              File::append($logFilePath, now() . ' - ' . '[Notificate winner]' . ' ' . $buffer . PHP_EOL);
+            } else {
+              File::append($logFilePath, now() . ' - ' . '[Notificate winner]' . ' ' . $buffer . PHP_EOL);
+            }
+          });
+
+          if (!$process->isSuccessful()) {
+            throw new ProcessFailedException($process);
+          }
 
           Notification::make()
             ->title('Clientes notificados')

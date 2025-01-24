@@ -11,10 +11,8 @@ use App\Filament\Resources\LotteryResource\Actions\SeeSoldTicketsAction;
 use App\Filament\Resources\LotteryResource\Actions\SellTicketsAction;
 use App\Filament\Resources\LotteryResource\Actions\TicketPaymentAction;
 use App\Filament\Resources\LotteryResource\Pages;
-use App\Models\Client;
 use App\Models\Currency;
 use App\Models\Lottery;
-use App\Models\Ticket;
 use Carbon\Carbon;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Forms\Components\Actions\Action;
@@ -36,7 +34,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\DB;
 
 class LotteryResource extends Resource
 {
@@ -306,6 +303,7 @@ class LotteryResource extends Resource
 
     public static function table(Table $table): Table
     {
+
         Lottery::latest()->first()?->update(['final_date' => now()->format('d/m/Y')]);
         return $table
             ->modifyQueryUsing(function (Builder $query) {

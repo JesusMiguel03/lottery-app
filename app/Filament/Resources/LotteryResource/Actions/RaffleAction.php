@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use Symfony\Component\Process\Process;
+use Symfony\Component\Process\Exception\ProcessFailedException;
 
 class RaffleAction extends Action
 {
@@ -160,32 +162,9 @@ class RaffleAction extends Action
 
         Notification::make()
           ->title('Ganadores seleccionados')
-          ->body(Str::markdown("Se han seleccionado los ganadores de la rifa #{$record->id} ({$record->name}), un total de ({$record->total_winners}) clientes ganaron"))
+          ->body(Str::markdown("Se han seleccionado los ganadores de la rifa #{$record->id} ({$record->name}), un total de ({$record->total_winners}) clientes ganaron, para notificarles haga clic en el botón de (Notificar a ganadores)"))
           ->success()
           ->send();
-
-        try {
-          Artisan::call("ws:winners {$record->id}");
-          Notification::make()
-            ->title('Ganadores seleccionados')
-            ->body(Str::markdown("Se han seleccionado los ganadores de la rifa #{$record->id} ({$record->name}), un total de ({$record->total_winners}) clientes ganaron"))
-            ->success()
-            ->send();
-        } catch (Exception $e) {
-          $logFilePath = public_path('logs/error_log.txt');
-
-          if (!File::exists(public_path('logs'))) {
-            File::makeDirectory(public_path('logs'), 0755, true);
-          }
-
-          File::append($logFilePath, now() . ' - ' . '[RaffleAction]' . ' ' . $e->getMessage() . PHP_EOL);
-
-          Notification::make()
-            ->title('Ocurrió un error')
-            ->body(Str::markdown("No se pudo notificar a los clientes ganadores, por favor seleccione la rifa y haga clic en la acción (**Notificar a ganadores**) para notificarles."))
-            ->danger()
-            ->send();
-        }
       });
   }
 }

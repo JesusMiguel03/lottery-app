@@ -32,7 +32,7 @@ class NotifyDebtorClientsAction extends Action
         )->count();
 
         try {
-          Artisan::call('ws:send');
+          Artisan::call('ws:debtors');
 
           Notification::make()
             ->title('Clientes notificados')

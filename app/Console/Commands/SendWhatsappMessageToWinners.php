@@ -33,6 +33,7 @@ class SendWhatsappMessageToWinners extends Command
         $lottery_id = $this->argument('lottery_id');
         $start = microtime(true);
 
+        $this->info("Lotería {$lottery_id}");
         $this->info("[🔍] Obteniendo clientes...");
 
         $winners = Client::whereHas('tickets', function ($query) use ($lottery_id) {
@@ -60,7 +61,10 @@ class SendWhatsappMessageToWinners extends Command
                 $tickets = [];
                 $lottery_name = $client['tickets'][0]['lottery']['lottery_name'];
                 foreach ($client['tickets'] as $ticket) {
-                    array_push($tickets, $ticket['number']);
+                    $tickets[] = [
+                        'number' => $ticket['number'],
+                        'id' => $ticket['id']
+                    ];
                 }
 
                 $data = [
@@ -104,13 +108,16 @@ class SendWhatsappMessageToWinners extends Command
             : ($time >= 18 ? 'Buenas noches' : 'Buenos días');
 
         $this->info("Iniciando envío de mensaje a ganadores...");
+        $this->info("------------------------------------");
         $winner_message = config('messages.winner');
         $looser_message = config('messages.looser');
 
         foreach ($winners as $key => $client) {
             $chatId = substr($client['client_phone'], 1);
             $tickets = $client['tickets'];
-            $formatted_tickets = array_map(function ($number) {
+            $ticketIds = array_map(fn($ticket) => $ticket['id'], $tickets);
+            $formatted_tickets = array_map(function ($ticket) {
+                $number = $ticket['number'];
                 return "- *$number*";
             }, $tickets);
             $ticket_numbers = implode("\n", $formatted_tickets);
@@ -129,15 +136,23 @@ class SendWhatsappMessageToWinners extends Command
                 sleep(rand(1, 3));
             }
 
+            $ticketIds = implode(', ', array: $ticketIds);
+
             $process = new Process([
                 "node",
                 base_path('resources/js/ws_bot.js'),
                 $chatId,
                 $message,
-                $lottery_id
+                $ticketIds
             ]);
             $process->setTimeout(timeout: 300);
-            $process->run();
+            $process->run(function ($type, $buffer) {
+                if (Process::ERR === $type) {
+                    $this->error($buffer);
+                } else {
+                    $this->info($buffer);
+                }
+            });
             if (!$process->isSuccessful()) {
                 throw new ProcessFailedException($process);
             }
@@ -178,9 +193,11 @@ class SendWhatsappMessageToWinners extends Command
         }
 
         $this->info("[👍] Envío finalizado");
+        $this->info("------------------------------------");
         $this->info('[✅] Mensajes enviados exitosamente');
 
         $end = microtime(true);
         $this->info('[🕒] Tiempo de ejecusón: ' . ($end - $start) . ' segundos');
+        return 0;
     }
 }

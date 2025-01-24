@@ -9,14 +9,14 @@ use Symfony\Component\Process\Process;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 
 
-class SendWhatsappMessages extends Command
+class SendWhatsappMessagesToDebtors extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'ws:send';
+    protected $signature = 'ws:debtors';
 
     /**
      * The console command description.
