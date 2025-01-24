@@ -55,13 +55,14 @@ class LotteryResource extends Resource
                     ->label('Nombre')
                     ->placeholder('Ej: Moto Bera')
                     ->autofocus()
-                    ->rules(['required', 'min:3', 'max:25', 'regex:/^[a-zA-Z\s]+$/'])
+                    ->rules(['required', 'min:3', 'max:25'])
                     ->markAsRequired()
+                    ->regex('/^[a-zA-Z0-9\s]+$/')
                     ->columnSpanFull()
                     ->validationAttribute('nombre')
                     ->validationMessages([
                         'required' => 'Debe indicar un nombre',
-                        'regex' => 'Solo se aceptan letras',
+                        'regex' => 'Solo se aceptan letras y números',
                         'min' => 'Debe contener al menos :min caracteres',
                         'max' => 'Debe contener máximo :max caracteres',
                     ])
@@ -95,7 +96,7 @@ class LotteryResource extends Resource
                     ->validationAttribute('descripción')
                     ->validationMessages([
                         'required' => 'Debe indicar una descripción',
-                        'regex' => 'Solo se aceptan letras',
+                        'regex' => 'Solo se aceptan letras y números',
                         'min' => 'Debe contener al menos :min caracteres',
                         'max' => 'Debe contener máximo :max caracteres',
                     ]),
