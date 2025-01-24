@@ -1,3 +1,4 @@
+import { exec } from "node:child_process";
 import qrcode from "qrcode-terminal";
 import pkg from "whatsapp-web.js";
 const { Client, LocalAuth } = pkg;
@@ -32,13 +33,45 @@ client.on("auth_failure", (message) => {
     console.log("Error al autenticar:", message);
 });
 
+client.on("message_ack", (ack) => {
+    const messageStatus = ack.ack;
+    const ticketId = process.argv[4];
+
+    if (messageStatus >= 1) {
+        exec(
+            `php artisan ticket_notified ${ticketId}`,
+            (error, stdout, stderr) => {
+                const regex = /Boleto \d+ notificado/;
+                if (regex.test(stdout)) {
+                    console.log("Comando ejecutado");
+                    return;
+                }
+
+                if (error) {
+                    console.error(
+                        `Error ejecutando el comando: \n ${error.message}`
+                    );
+                    return;
+                }
+
+                if (stderr) {
+                    console.error(`Error en stderr: \n ${stderr}`);
+                    return;
+                }
+
+                console.log(`Resultado del comando: \n ${stdout}`);
+            }
+        );
+    }
+});
+
 async function send_message(chatId, message) {
     try {
         console.time("Tiempo transcurrido");
         const chat = await client.getChatById("58" + chatId + "@c.us");
         await chat.sendMessage(message);
 
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 4000));
 
         console.timeEnd("Tiempo transcurrido");
         process.exit(0);

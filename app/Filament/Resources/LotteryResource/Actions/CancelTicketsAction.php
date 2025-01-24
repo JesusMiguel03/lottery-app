@@ -24,7 +24,7 @@ class CancelTicketsAction extends Action
       ->slideOver()
       ->hidden(
         fn(Lottery $record) =>
-        $record->tickets()->whereHas('client')->whereDoesntHave('payment')->count() === 0
+        $record->tickets()->whereHas('client')->whereDoesntHave('payment')->count() === 0 || (now()->format('d/m/Y') > $record->final_date)
       )
       ->modalHeading(fn(Lottery $record) => "Cancelar boletos para rifa #{$record->id} ({$record->name})")
       ->form([

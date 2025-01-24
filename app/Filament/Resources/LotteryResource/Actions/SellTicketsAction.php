@@ -33,7 +33,7 @@ class SellTicketsAction extends Action
 			->icon('heroicon-o-tag')
 			->slideOver()
 			->hidden(
-				fn(Lottery $record) => (count($record->get_winners()) > 0 ? true : null) || (empty($record->totalLeft) ? true : null)
+				fn(Lottery $record) => (count($record->getWinners()) > 0 ? true : null) || (empty($record->totalLeft) || (now()->format('d/m/Y') > $record->final_date) ? true : null)
 			)
 			->modalHeading(fn(Lottery $record) => "Venta de boletos para rifa #{$record->id} ({$record->name})")
 			->form([

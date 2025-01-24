@@ -24,13 +24,13 @@ class RaffleAction extends Action
 
     $this->name('Raffle');
 
-    $this->label(fn(Lottery $record) => count($record->get_winners()) === 0 ? "Realizar sorteo" : 'Ver ganadores')
-      ->icon(fn(Lottery $record) => count($record->get_winners()) === 0 ? 'heroicon-o-play' : 'heroicon-o-star')
+    $this->label(fn(Lottery $record) => count($record->getWinners()) === 0 ? "Realizar sorteo" : 'Ver ganadores')
+      ->icon(fn(Lottery $record) => count($record->getWinners()) === 0 ? 'heroicon-o-play' : 'heroicon-o-star')
       ->slideOver()
       ->hidden(
         fn(Lottery $record) =>
-        !($record->final_date === now()->format('d/m/Y') &&
-          count($record->get_payed_tickets()) > 0)
+        count($record->get_payed_tickets()) === 0 ||
+          now()->format('d/m/Y') !== $record->final_date
       )
       ->modalHeading(function (Lottery $record) {
         $lottery_id = $record->id;
@@ -48,11 +48,11 @@ class RaffleAction extends Action
         // Winners
         Placeholder::make('')
           ->content(function (Lottery $record) {
-            $tickets = $record->get_winners();
+            $tickets = $record->getWinners();
             $prizes = $record->prizes;
 
             $ticketList = $tickets->map(function ($ticket, $index) use ($prizes) {
-              $prize = $prizes[$ticket->order - 1];
+              $prize = $prizes[$ticket->order - 1 > 0 ? $ticket->order - 1 : 0];
               ++$index;
               return "<li class='py-2 px-6 border border-neutral-400 rounded-md'>
                         <div class='flex flex-col justify-center items-center'>
@@ -115,12 +115,12 @@ class RaffleAction extends Action
           ->reorderable(false)
           ->deletable(false)
           ->columnSpanFull()
-          ->hidden(fn(Lottery $record) => count($record->get_winners()) > 0)
+          ->hidden(fn(Lottery $record) => count($record->getWinners()) > 0)
       ])
       ->modalSubmitActionLabel('Registrar ganadores')
       ->modalSubmitAction(
         fn(Lottery $record) =>
-        count($record->get_winners()) === 0 ? null : false
+        count($record->getWinners()) === 0 ? null : false
       )
       ->action(function (Lottery $record, array $data) {
         $flat_data = array_map(
@@ -146,7 +146,6 @@ class RaffleAction extends Action
             $current_index = ++$index;
             $ticket->update([
               'winner' => true,
-              'notified_at' => now(),
               'order' => $current_index
             ]);
 

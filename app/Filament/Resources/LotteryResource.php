@@ -11,10 +11,13 @@ use App\Filament\Resources\LotteryResource\Actions\SeeSoldTicketsAction;
 use App\Filament\Resources\LotteryResource\Actions\SellTicketsAction;
 use App\Filament\Resources\LotteryResource\Actions\TicketPaymentAction;
 use App\Filament\Resources\LotteryResource\Pages;
+use App\Models\Client;
 use App\Models\Currency;
 use App\Models\Lottery;
+use App\Models\Ticket;
 use Carbon\Carbon;
 use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Placeholder;
@@ -33,6 +36,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 class LotteryResource extends Resource
 {
@@ -63,7 +67,24 @@ class LotteryResource extends Resource
                         'regex' => 'Solo se aceptan letras',
                         'min' => 'Debe contener al menos :min caracteres',
                         'max' => 'Debe contener máximo :max caracteres',
-                    ]),
+                    ])
+                    ->suffixAction(
+                        Action::make('populate')
+                            ->label('Auto rellenar')
+                            ->icon('heroicon-m-clipboard')
+                            ->action(function (Set $set): void {
+                                $set('name', "Ejemplo");
+                                $set('description', "Ejemplo de descripcion");
+                                $set('total_winners', 1);
+                                $set('total_tickets', 5);
+                                $set('total_price', 10);
+                                $set('prizes', [
+                                    ['name' => 'Premio', 'quantity' => 1, 'value' => 1]
+                                ]);
+                                $set('initial_date', now());
+                                $set('final_date', now()->addDay());
+                            })
+                    ),
                 Textarea::make('description')
                     ->label('Descripción')
                     ->placeholder('Ej: Sorteo de moto Bera SBR')
@@ -285,7 +306,7 @@ class LotteryResource extends Resource
 
     public static function table(Table $table): Table
     {
-        // Lottery::latest()->first()->update(['final_date' => '21/01/2025']);
+        Lottery::latest()->first()?->update(['final_date' => now()->format('d/m/Y')]);
         return $table
             ->modifyQueryUsing(function (Builder $query) {
                 return $query->with('tickets');
@@ -380,11 +401,14 @@ class LotteryResource extends Resource
             ])
             ->actions([
                 ActionGroup::make([
-                    EditAction::make(),
+                    EditAction::make()
+                        ->hidden(
+                            fn(Lottery $record) =>
+                            now()->format('d/m/y') > $record->final_date
+                        ),
                     SellTicketsAction::make(),
                     SeeSoldTicketsAction::make(),
-                    TicketPaymentAction::make()
-                        ->hidden(fn(Lottery $record) => count($record->not_payed_tickets()) === 0),
+                    TicketPaymentAction::make(),
                     CancelTicketsAction::make(),
                     PrizeModalAction::make(),
                     NotifyDebtorClientsAction::make(),

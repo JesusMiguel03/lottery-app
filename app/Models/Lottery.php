@@ -127,8 +127,13 @@ class Lottery extends Model
         return $this->tickets()->whereHas('payment')->get();
     }
 
-    public function get_winners()
+    public function getWinners()
     {
         return $this->tickets()->where('winner', true)->with('client')->get();
+    }
+
+    public function getNotifiedTickets()
+    {
+        return $this->tickets()->whereNotNull('notified_at')->get();
     }
 }

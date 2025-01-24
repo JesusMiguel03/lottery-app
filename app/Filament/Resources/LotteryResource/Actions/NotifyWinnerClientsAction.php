@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\LotteryResource\Actions;
 
-use App\Models\Client;
 use Filament\Tables\Actions\Action;
 use App\Models\Lottery;
 use Exception;
@@ -22,11 +21,10 @@ class NotifyWinnerClientsAction extends Action
     $this->label("Notificar a ganadores")
       ->icon('heroicon-o-paper-airplane')
       ->hidden(
-        fn(Lottery $record) =>
-        !($record->finished_at !== null && $record->final_date !== now()->format('d/m/Y'))
+        fn(Lottery $record) => $record->getNotifiedTickets()->count() > 0 || now()->format('d/m/Y') > $record->final_date || $record->getWinners()->count() === 0
       )
       ->action(function (Lottery $record) {
-        $clients = $record->get_winners()->count();
+        $clients = $record->getWinners()->count();
 
         try {
           Artisan::call("ws:winners {$record->id}");

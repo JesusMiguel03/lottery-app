@@ -23,7 +23,7 @@ class NotifyDebtorClientsAction extends Action
       ->icon('heroicon-o-chat-bubble-left')
       ->hidden(
         fn(Lottery $record) =>
-        $record->tickets()->whereHas('client')->whereDoesntHave('payment')->count() === 0
+        $record->tickets()->whereHas('client')->whereDoesntHave('payment')->count() === 0 || (now()->format('d/m/Y') > $record->final_date)
       )
       ->action(function () {
         $clients = Client::whereHas(

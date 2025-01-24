@@ -27,7 +27,11 @@ class TicketPaymentAction extends Action
 
     $this->label("Pago de boleto")
       ->icon('heroicon-o-credit-card')
-      ->hidden(fn(Lottery $record) => count($record->get_winners()) > 0 ? true : null)
+      ->hidden(fn(Lottery $record) => (count($record->getWinners()) > 0) ||
+        (now()->format('d/m/Y') > $record->final_date) ||
+        count($record->not_payed_tickets()) === 0
+        ? true
+        : null)
       ->modalHeading(fn(Lottery $record) => "Pago de boletos para rifa #{$record->id} ({$record->name})")
       ->form([
         Select::make('ticket_id')
