@@ -24,3 +24,4 @@ yarn-error.log
 .wwebjs_auth
 .wwebjs_cache
 /public/logs/*
+composer.lock
