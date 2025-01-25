@@ -2,10 +2,10 @@
 
 namespace App\Filament\Pages;
 
-use App\Livewire\ClientsChart;
 use App\Livewire\MontlyPaymentsChart;
+use App\Livewire\NewClientsChart;
 use App\Livewire\StatsOverview;
-use App\Livewire\TicketsChart;
+use App\Livewire\TicketsSoldChart;
 use Filament\Pages\Page;
 
 class HomeDashboard extends Page
@@ -21,8 +21,8 @@ class HomeDashboard extends Page
     {
         return [
             StatsOverview::class,
-            TicketsChart::class,
-            ClientsChart::class,
+            TicketsSoldChart::class,
+            NewClientsChart::class,
             MontlyPaymentsChart::class
         ];
     }

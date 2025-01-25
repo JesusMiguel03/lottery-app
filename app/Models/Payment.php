@@ -23,4 +23,12 @@ class Payment extends Model
     {
         return $this->belongsTo(Currency::class);
     }
+
+    public function getPayedAmountAttribute()
+    {
+        $type = $this->type;
+        return $type === 'bs' || $type === 'payment'
+            ? $this->amount / $this->currency->amount
+            : $this->amount;
+    }
 }

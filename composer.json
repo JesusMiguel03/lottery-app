@@ -11,6 +11,7 @@
         "flowframe/laravel-trend": "^0.3.0",
         "laravel/framework": "^11.31",
         "laravel/tinker": "^2.9",
+        "leandrocfe/filament-apex-charts": "^3.1",
         "spatie/laravel-backup": "^9.2"
     },
     "require-dev": {

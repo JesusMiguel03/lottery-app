@@ -4,53 +4,125 @@ namespace App\Livewire;
 
 use App\Models\Payment;
 use Carbon\Carbon;
-use Filament\Widgets\ChartWidget;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Get;
+use Flowframe\Trend\Trend;
+use Flowframe\Trend\TrendValue;
 use Illuminate\Support\Facades\DB;
+use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
-class MontlyPaymentsChart extends ChartWidget
+class MontlyPaymentsChart extends ApexChartWidget
 {
+    /**
+     * Chart Id
+     *
+     * @var string
+     */
+    protected static ?string $chartId = 'montlyPaymentsChart';
+
+    /**
+     * Widget Title
+     *
+     * @var string|null
+     */
     protected static ?string $heading = 'Pagos mensuales';
 
-    protected function getData(): array
+    /**
+     * Chart options (series, labels, types, size, animations...)
+     * https://apexcharts.com/docs/options
+     *
+     * @return array
+     */
+    protected function getOptions(): array
     {
-        $data = DB::table('payments')
-            ->select(DB::raw('strftime("%Y-%m", created_at) as month'), DB::raw('SUM(CASE 
-                WHEN type = "bs" OR type = "payment" THEN amount / (SELECT value FROM currencies WHERE id = currency_id) 
+        $data = Payment::whereBetween(
+            'created_at',
+            [
+                Carbon::parse($this->filterFormData['date_start']),
+                Carbon::parse($this->filterFormData['date_end']),
+            ]
+        )->selectRaw('
+            strftime("%Y-%m", created_at) as month,
+            SUM(
+                CASE WHEN type = "bs" OR type = "payment" THEN
+                    amount / (SELECT value FROM currencies WHERE id = currency_id)
                 ELSE amount 
-            END) as total'))
-            ->whereBetween('created_at', [now()->startOfYear(), now()->endOfYear()])
+                END
+            ) as aggregate')
             ->groupBy('month')
-            ->orderBy('month')
-            ->get();
+            ->get()
+            ->keyBy('month')
+            ->toArray();
+
 
         $months = [];
         for ($i = 1; $i <= 12; $i++) {
-            $months[Carbon::now()->format('Y') . '-' . str_pad($i, 2, '0', STR_PAD_LEFT)] = 0;
+            $date = Carbon::createFromFormat('m', $i)->format('Y-m');
+            $months[$date] = [
+                'month' => $date,
+                'aggregate' => 0
+            ];
         }
 
-        foreach ($data as $value) {
-            $months[$value->month] = $value->total;
+        $groupedData = array_merge($months, $data);
+        ksort($groupedData);
+
+        $data = [];
+        foreach ($groupedData as $month => $row) {
+            $data[] = [
+                'month' => $month,
+                'aggregate' => $row['aggregate'],
+            ];
         }
 
         return [
-            'labels' => array_keys($months),
-            'datasets' => [
+            'chart' => [
+                'type' => 'bar',
+                'height' => 300,
+                'toolbar' => [
+                    'show' => false,
+                ],
+            ],
+            'series' => [
                 [
-                    'label' => 'Pagos por mes $',
-                    'data' => array_values($months),
-                ]
+                    'name' => 'Pagos por mes $',
+                    'data' => array_map(fn($row) => $row['aggregate'], $data),
+                ],
+            ],
+            'xaxis' => [
+                'categories' => array_map(
+                    fn($row) =>
+                    Carbon::createFromFormat('Y-m', $row['month'])->translatedFormat('Y-M'),
+                    $data
+                ),
+                'labels' => [
+                    'style' => [
+                        'fontFamily' => 'inherit',
+                    ],
+                ],
+            ],
+            'yaxis' => [
+                'labels' => [
+                    'style' => [
+                        'fontFamily' => 'inherit',
+                    ],
+                ],
             ],
         ];
     }
 
-    protected function getType(): string
+    protected function getFormSchema(): array
     {
-        return 'bar';
-    }
-
-    public function getMaxHeight(): string|null
-    {
-        return '300px';
+        return [
+            DatePicker::make('date_start')
+                ->label('Fecha de inicio')
+                ->default(now()->startOfYear())
+                ->maxDate(fn(Get $get) => Carbon::createFromFormat('Y-m-d', $get('date_end'))->subDay()->startOfDay()),
+            DatePicker::make('date_end')
+                ->label('Fecha fin')
+                ->default(now()->endOfYear())
+                ->minDate(fn(Get $get) => Carbon::createFromFormat('Y-m-d', $get('date_start'))->addDay()->startOfDay())
+        ];
     }
 
     public function getColumnSpan(): array|int|string
