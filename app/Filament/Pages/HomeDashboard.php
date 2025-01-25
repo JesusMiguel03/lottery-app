@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Livewire\MonthlyPrizesTable;
 use App\Livewire\MontlyPaymentsChart;
 use App\Livewire\NewClientsChart;
 use App\Livewire\StatsOverview;
@@ -23,7 +24,8 @@ class HomeDashboard extends Page
             StatsOverview::class,
             TicketsSoldChart::class,
             NewClientsChart::class,
-            MontlyPaymentsChart::class
+            MontlyPaymentsChart::class,
+            MonthlyPrizesTable::class
         ];
     }
 }

@@ -12,4 +12,14 @@ class Prize extends Model
         'value',
         'order'
     ];
+
+    public function lottery()
+    {
+        return $this->belongsTo(Lottery::class);
+    }
+
+    public function winner()
+    {
+        return $this->lottery->tickets()->where('order', $this->order);
+    }
 }
