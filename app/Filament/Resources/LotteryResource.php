@@ -304,8 +304,6 @@ class LotteryResource extends Resource
 
     public static function table(Table $table): Table
     {
-
-        Lottery::latest()->first()?->update(['final_date' => now()->format('d/m/Y')]);
         return $table
             ->modifyQueryUsing(function (Builder $query) {
                 return $query->with('tickets');
