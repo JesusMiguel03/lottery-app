@@ -1,0 +1,175 @@
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px 40px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1,
+h2,
+h3 {
+    color: #333;
+}
+
+h3 {
+    position: relative;
+    padding: 0.2rem 0.5rem;
+}
+
+h3::after {
+    content: "";
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    border-bottom: 0.1px #666 solid;
+}
+
+pre {
+    background-color: #f4f4f4;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    overflow-x: auto;
+}
+
+code {
+    background-color: #f4f4f4;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+ul {
+    list-style-type: disc;
+    margin-left: 20px;
+}
+
+ol {
+    list-style-type: decimal;
+    margin-left: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+table,
+th,
+td {
+    border: 1px solid #ddd;
+}
+
+th,
+td {
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #f4f4f4;
+}
+
+.toc a {
+    text-decoration: none;
+    color: #007bff;
+}
+
+.toc a:hover {
+    text-decoration: underline;
+}
+
+header {
+    text-align: center;
+}
+
+header > h2 {
+    margin-top: -2rem;
+    margin-bottom: 0rem;
+}
+
+h2 {
+    text-align: center;
+}
+
+a {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    color: salmon;
+    background-color: transparent;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    font-weight: bold;
+    cursor: pointer;
+    letter-spacing: 1px;
+    font-size: 14px;
+    margin-inline: auto;
+    position: relative;
+    padding-right: 20px;
+    margin-right: 8px;
+}
+
+a::after {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid salmon;
+    border-bottom: 2px solid salmon;
+    transform: rotate(-45deg);
+    transition: all 0.3s ease;
+    position: absolute;
+    right: 0;
+    top: 50%;
+    margin-top: -4px; /* Center the arrow vertically */
+}
+
+a:hover::after {
+    transform: rotate(-45deg) translate(4px, 4px);
+    border-color: #d95e39;
+}
+
+a:hover::before {
+    opacity: 1;
+    width: 8px;
+}
+
+a:hover {
+    color: #d95e39;
+}
+
+.line:empty {
+    display: none;
+}
+
+h2 {
+    margin: 5rem 0;
+}
+
+.table-of-content {
+    display: flex;
+    align-items: center;
+    justify-items: center;
+    position: relative;
+}
+
+.table-of-content > h3 {
+    width: 100%;
+}
+
+.table-of-content > a {
+    width: fit-content;
+    position: absolute;
+    right: 0;
+}
