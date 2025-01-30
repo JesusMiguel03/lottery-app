@@ -29,13 +29,5 @@ class ClientSeeder extends Seeder
         }
 
         Client::insert($clients);
-        Client::create([
-            'name' => 'Lorem',
-            'last_name' => 'Lorem',
-            'code' => '0424',
-            'phone' => 3011753,
-            'doc' => fake()->numberBetween(000_000_000, 999_999_999),
-            'doc_type' => fake()->randomElement(['V', 'E', 'J', 'G']),
-        ]);
     }
 }

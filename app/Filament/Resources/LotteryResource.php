@@ -15,7 +15,6 @@ use App\Models\Currency;
 use App\Models\Lottery;
 use Carbon\Carbon;
 use Filament\Actions\Concerns\InteractsWithActions;
-use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Placeholder;
@@ -65,24 +64,7 @@ class LotteryResource extends Resource
                         'regex' => 'Solo se aceptan letras y números',
                         'min' => 'Debe contener al menos :min caracteres',
                         'max' => 'Debe contener máximo :max caracteres',
-                    ])
-                    ->suffixAction(
-                        Action::make('populate')
-                            ->label('Auto rellenar')
-                            ->icon('heroicon-m-clipboard')
-                            ->action(function (Set $set): void {
-                                $set('name', "Ejemplo");
-                                $set('description', "Ejemplo de descripcion");
-                                $set('total_winners', 1);
-                                $set('total_tickets', 5);
-                                $set('total_price', 10);
-                                $set('prizes', [
-                                    ['name' => 'Premio', 'quantity' => 1, 'value' => 1]
-                                ]);
-                                $set('initial_date', now());
-                                $set('final_date', now()->addDay());
-                            })
-                    ),
+                    ]),
                 Textarea::make('description')
                     ->label('Descripción')
                     ->placeholder('Ej: Sorteo de moto Bera SBR')
