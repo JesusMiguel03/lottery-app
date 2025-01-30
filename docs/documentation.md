@@ -15,8 +15,7 @@
         -   [1.1.1. Librerías](#111-librerías)
     -   [1.2. Requisitos Previos](#12-requisitos-previos)
     -   [1.3. Estructura del Proyecto](#13-estructura-del-proyecto)
-    -   [1.4. Configuración](#14-configuración)
-    -   [1.5. Uso del Sistema](#15-uso-del-sistema)
+    -   [1.4. Uso del Sistema](#14-uso-del-sistema)
 -   [2. Sobre el sistema](#2-sobre-el-sistema)
     -   [2.1. Módulos Disponibles](#21-módulos-disponibles)
         -   [2.1.1. Inicio](#211-inicio)
@@ -27,7 +26,7 @@
 ## 1. Apartado técnico
 
 <div class="table-of-content">
-  <h3>1.1. Tecnologías Utilizadas</h3>
+  <h3 id="11-tecnologías-utilizadas">1.1. Tecnologías Utilizadas</h3>
   <a href="#tabla-de-contenidos">
       Volver a la Tabla de Contenidos
     </a>
@@ -38,7 +37,7 @@
 -   [AlpineJS](https://alpinejs.dev/): Framework JavaScript minimalista para interactividad en el frontend.
 -   [TailwindCSS](https://tailwindcss.com/): Framework CSS utility-first para diseñar interfaces de usuario modernas.
 
-    #### 1.1.1 Librerías
+    <h4 id="111-librerías">1.1.1 Librerías</h4>
 
     -   [Spatie/Backup](https://spatie.be/docs/laravel-backup/v8/introduction): Librería PHP para el manejo de respaldos de la base de datos.
     -   [Laravel-trend](https://github.com/Flowframe/laravel-trend): Librería PHP para el manejo simple de datos en las gráficas.
@@ -47,7 +46,7 @@
     -   [QRCode Terminal](https://www.npmjs.com/package/qrcode-terminal): Librería Javascript para mostrar el QR de whatsapp en la terminal.
 
 <div class="table-of-content">
-  <h3>1.2. Requisitos Previos</h3>
+  <h3 id="12-requisitos-previos">1.2. Requisitos Previos</h3>
   <a href="#tabla-de-contenidos">
       Volver a la Tabla de Contenidos
     </a>
@@ -60,7 +59,7 @@
 -   Base de datos (SQLite)
 
 <div class="table-of-content">
-  <h3>1.3. Estructura del Proyecto</h3>
+  <h3 id="13-estructura-del-proyecto">1.3. Estructura del Proyecto</h3>
   <a href="#tabla-de-contenidos">
       Volver a la Tabla de Contenidos
     </a>
@@ -83,50 +82,7 @@ lottery-app/
 ```
 
 <div class="table-of-content">
-  <h3>1.4. Configuración</h3>
-  <a href="#tabla-de-contenidos">
-      Volver a la Tabla de Contenidos
-    </a>
-</div>
-
-Para configurar el sistema, siga los siguientes pasos:
-
-1. Descomprima la carpeta del proyecto ("lottery-app").
-2. Instale las dependencias de Composer:
-    ```sh
-    composer install
-    ```
-3. Instale las dependencias de Node.js:
-    ```sh
-    npm install
-    ```
-4. Ejecute los siguientes comandos dentro de la carpeta del proyecto
-    ```sh
-    cp .env.example .env
-    php artisan key:generate
-    ```
-5. Configure el archivo `.env` con las credenciales de base de datos y otras configuraciones necesarias.
-
-    ```sh
-    APP_NAME="Nombre del proyecto"
-    APP_TIMEZONE=America/Caracas
-    APP_LOCALE=es
-    APP_FALLBACK_LOCALE=es
-    APP_FAKER_LOCALE=es_US
-    ```
-
-6. Ejecuta las migraciones y seeders de la base de datos:
-    ```sh
-    php artisan migrate --seed
-    ```
-7. Prepara el sistema para ser usado:
-
-    ```sh
-    php artisan prepare-build
-    ```
-
-<div class="table-of-content">
-  <h3>1.5. Uso del Sistema</h3>
+  <h3 id="14-uso-del-sistema">1.4. Uso del Sistema</h3>
   <a href="#tabla-de-contenidos">
       Volver a la Tabla de Contenidos
     </a>
@@ -141,7 +97,7 @@ php artisan serve
 ## 2. Sobre el sistema
 
 <div class="table-of-content">
-  <h3>1.1. Módulos Disponibles</h3>
+  <h3 id="21-módulos-disponibles">1.1. Módulos Disponibles</h3>
   <a href="#tabla-de-contenidos">
       Volver a la Tabla de Contenidos
     </a>

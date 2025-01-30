@@ -47,5 +47,12 @@ class AppServiceProvider extends ServiceProvider
                 'color' => 'info',
             ])
         );
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::USER_MENU_BEFORE,
+            fn() => view('filament::components.badge', [
+                'slot' => new HtmlString("<a href='/admin/docs'>Ver Documentación</a>"),
+                'color' => 'info',
+            ])
+        );
     }
 }
