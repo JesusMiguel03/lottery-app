@@ -1,6 +1,5 @@
 # WIP
 
--   Revisar prepare-build command
 -   Enviar mensaje de deuda (sendwhatsappmessages) usando un cron
 
     -   SendWhatsappMessages -> se notifica 3 dias antes
