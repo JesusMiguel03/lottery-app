@@ -56,6 +56,7 @@ class AdminPanelProvider extends PanelProvider
             ->sidebarCollapsibleOnDesktop(true)
             ->spa(true)
             ->databaseTransactions()
+            ->favicon(asset('favicon.ico'))
             ->plugins([
                 FilamentApexChartsPlugin::make(),
             ]);
