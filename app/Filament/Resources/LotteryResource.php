@@ -33,6 +33,7 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
@@ -390,7 +391,7 @@ class LotteryResource extends Resource
                     EditAction::make()
                         ->hidden(
                             fn(Lottery $record) => (strtotime(now()->format('Y-m-d')) >
-                                strtotime(Carbon::createFromFormat('d/m/Y', $record->final_date)->format('Y-m-d')))
+                                strtotime(Carbon::createFromFormat('d/m/Y', $record->final_date)->format('Y-m-d'))) || $record->finished_at !== null
                         ),
                     SellTicketsAction::make(),
                     SeeSoldTicketsAction::make(),
@@ -399,7 +400,11 @@ class LotteryResource extends Resource
                     PrizeModalAction::make(),
                     NotifyDebtorClientsAction::make(),
                     NotifyWinnerClientsAction::make(),
-                    RaffleAction::make()
+                    RaffleAction::make(),
+                    DeleteAction::make()
+                        ->after(function (Lottery $record) {
+                            HasActivityLogger::logActivity($record, 'delete', 'delete');
+                        }),
                 ])
             ])
             ->defaultSort('id', 'desc')

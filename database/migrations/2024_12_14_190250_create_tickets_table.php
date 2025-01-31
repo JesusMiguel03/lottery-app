@@ -27,7 +27,6 @@ return new class extends Migration
             $table->foreignId('client_id')
                 ->nullable()
                 ->constrained()
-                ->cascadeOnDelete()
                 ->cascadeOnUpdate();
             $table->foreignId('lottery_id')
                 ->constrained()

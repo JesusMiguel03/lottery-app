@@ -123,8 +123,6 @@ Este módulo permite gestionar las tasas aplicables en el sistema, estas se empl
 
 -   **Registrar**: Permite registrar nuevas tasas.
 -   **Editar**: Permite editar tasas existentes.
--   **Borrar**: Permite eliminar tasas.
--   **Ver**: Permite visualizar las tasas registradas.
 
 #### 2.1.3. Clientes
 
@@ -132,8 +130,8 @@ Este módulo permite gestionar la información de los clientes.
 
 -   **Registrar**: Permite registrar nuevos clientes.
 -   **Editar**: Permite editar la información de clientes existentes.
--   **Borrar**: Permite eliminar clientes.
 -   **Ver**: Permite visualizar la información de los clientes.
+    -   **Borrar**: Permite eliminar clientes (toda información relacionada a ellos será borrada, los boletos comprados serán reiniciados).
 -   **Ver premios**: Permite visualizar todos los premios que ha obtenido de las rifas.
 -   **Ver boletos**: Permite visualizar los boletos que ha comprado o estan pendientes por pagar.
 
@@ -143,17 +141,17 @@ Este módulo permite gestionar las rifas y la venta de boletos.
 
 -   **Registrar**: Permite registrar nuevas rifas.
 -   **Editar**: Permite editar rifas existentes.
--   **Borrar**: Permite eliminar rifas.
+    -   **Borrar**: Permite eliminar rifas (boletos, pagos y premios también serán borrados).
 -   **Ver**: Permite visualizar las rifas registradas.
 -   **Venta de boletos**: Permite gestionar la venta de boletos.
-    -   **Pago individual**: Permite realizar el pago de boletos de manera individual.
-    -   **Ver boletos vendidos**: Permite visualizar todos los boletos vendidos.
-    -   **Cancelar boletos pendientes**: Permite cancelar los boletos que no hayan sido pagados.
-    -   **Notas**:
-        -   Puede registrar hasta 10.000 boletos por rifa.
-        -   Puede registrar n rifas por mes.
-        -   Se puede abonar/pagar todos los boletos vendidos en una sola transacción.
-        -   Se puede pagar un boleto posterior a su compra.
+-   **Pago individual**: Permite realizar el pago de boletos de manera individual.
+-   **Ver boletos vendidos**: Permite visualizar todos los boletos vendidos.
+-   **Cancelar boletos pendientes**: Permite cancelar los boletos que no hayan sido pagados.
+-   **Notas**:
+    -   Puede registrar hasta 10.000 boletos por rifa.
+    -   Puede registrar n rifas por mes.
+    -   Se puede abonar/pagar todos los boletos vendidos en una sola transacción.
+    -   Se puede pagar un boleto posterior a su compra.
 -   **Ver premios**: Permite ver los premios registrados.
 -   **Notificar a deudores**: Permite enviar un mensaje indicando al cliente los boletos están pendientes por pagar.
 -   **Notificar a ganadores**: Permite enviar un mensaje indicando a los clientes ganadores que retiren su premio.

@@ -13,16 +13,6 @@ class EditClient extends EditRecord
     use RedirectTrait, HasActivityLogger;
     protected static string $resource = ClientResource::class;
 
-    protected function getHeaderActions(): array
-    {
-        return [
-            Actions\DeleteAction::make()
-                ->after(function () {
-                    $this->afterDeleteModel($this->record);
-                }),
-        ];
-    }
-
     protected function afterSave(): void
     {
         $this->afterSaveModel($this->record);

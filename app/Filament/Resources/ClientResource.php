@@ -18,6 +18,7 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -176,7 +177,11 @@ class ClientResource extends Resource
                     Tables\Actions\EditAction::make(),
                     ViewAction::make(),
                     SeeTicketsAction::make(),
-                    SeePrizesAction::make()
+                    SeePrizesAction::make(),
+                    DeleteAction::make()
+                        ->after(function (Client $record) {
+                            HasActivityLogger::logActivity($record, 'delete', 'delete');
+                        }),
                 ])
             ])
             ->bulkActions([

@@ -17,6 +17,18 @@ class Client extends Model
         'phone'
     ];
 
+    protected static function booted()
+    {
+        static::deleting(function ($client) {
+            $client->tickets()->update([
+                'client_id' => null,
+                'alerts' => 0,
+                'winner' => false,
+                'notified_at' => null,
+            ]);
+        });
+    }
+
     public function fullName(): Attribute
     {
         return Attribute::make(
