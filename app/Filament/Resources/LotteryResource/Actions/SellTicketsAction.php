@@ -9,15 +9,18 @@ use App\Models\Client;
 use App\Models\Currency;
 use App\Models\Ticket;
 use App\Models\Lottery;
+use Carbon\Carbon;
 use Closure;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Split;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
@@ -33,19 +36,116 @@ class SellTicketsAction extends Action
 			->icon('heroicon-o-tag')
 			->slideOver()
 			->hidden(
-				fn(Lottery $record) => (count($record->getWinners()) > 0 ? true : null) || (empty($record->totalLeft) || (now()->format('d/m/Y') > $record->final_date) ? true : null)
+				fn(Lottery $record) => (count($record->getWinners()) > 0 ? true : null) ||
+					(empty($record->totalLeft)) ||
+					(strtotime(now()->format('Y-m-d')) >
+						strtotime(Carbon::createFromFormat('d/m/Y', $record->final_date)->format('Y-m-d'))) ? true : null
+
 			)
 			->modalHeading(fn(Lottery $record) => "Venta de boletos para rifa #{$record->id} ({$record->name})")
 			->form([
 				Select::make('client_id')
 					->label('Cliente')
-					->options(Client::query()->pluck('name', 'id'))
+					->options(Client::query()->select([
+						'id',
+						DB::raw("(name || ' ' || last_name) as full_name"),
+					])->pluck('full_name', 'id'))
 					->markAsRequired()
 					->rules(['required'])
 					->validationMessages([
 						'required' => 'Debe seleccionar un cliente'
 					])
-					->searchable(),
+					->searchable()
+					->createOptionForm([
+						Split::make([
+							TextInput::make('name')
+								->label('Nombre')
+								->placeholder('José')
+								->markAsRequired()
+								->rules(['required', 'string', 'min:3', 'max:15', 'regex:/^[a-zA-Z\s]+$/'])
+								->validationMessages([
+									'required' => 'Debe indicar el nombre',
+									'string' => 'El nombre debe ser una cadena de texto',
+									'min' => 'El nombre debe tener al menos :min caracteres',
+									'max' => 'El nombre no debe tener más de :max caracteres',
+									'regex' => 'El nombre solo puede contener letras y espacios'
+								]),
+							TextInput::make('last_name')
+								->label('Apellido')
+								->placeholder('Marcos')
+								->markAsRequired()
+								->rules(['required', 'string', 'min:3', 'max:15', 'regex:/^[a-zA-Z\s]+$/'])
+								->validationMessages([
+									'required' => 'Debe indicar el apellido',
+									'string' => 'El apellido debe ser una cadena de texto',
+									'min' => 'El apellido debe tener al menos :min caracteres',
+									'max' => 'El apellido no debe tener más de :max caracteres',
+									'regex' => 'El apellido solo puede contener letras y espacios'
+								]),
+						]),
+						Split::make([
+							Select::make('doc_type')
+								->label('Nacionalidad')
+								->options(['V' => 'V', 'E' => 'E', 'J' => 'J', 'G' => 'G'])
+								->placeholder('Selecciona una opción')
+								->markAsRequired()
+								->rules(['required'])
+								->in(['V', 'E', 'J', 'G'])
+								->validationMessages([
+									'required' => "Debe seleccionar una opción",
+									'in' => "Debe seleccionar una de las opciones",
+								]),
+							TextInput::make('doc')
+								->label('Documento')
+								->type('number')
+								->placeholder('12451248')
+								->markAsRequired()
+								->rules(['required', 'min_digits:6', 'max_digits:9',  'numeric'])
+								->unique(ignoreRecord: true)
+								->validationMessages([
+									'required' => 'Debe indicar la cédula',
+									'min_digits' => 'Debe contener al menos :min dígitos',
+									'max_digits' => 'Debe contener máximo :max dígitos',
+									'numeric' => 'Deben ser números',
+									'unique' => 'Esta cédula se encuentra registrada',
+								]),
+						]),
+						Split::make([
+							Select::make('code')
+								->label('Código')
+								->options([
+									'0412' => '0412',
+									'0414' => '0414',
+									'0416' => '0416',
+									'0424' => '0424',
+									'0426' => '0426'
+								])
+								->placeholder('Selecciona una opción')
+								->markAsRequired()
+								->rules(['required'])
+								->in(['0412', '0414', '0416', '0424', '0426'])
+								->validationMessages([
+									'required' => "Debe seleccionar una opción",
+									'in' => "Debe seleccionar una de las opciones",
+								]),
+							TextInput::make('phone')
+								->label('Teléfono')
+								->type('number')
+								->placeholder('4561278')
+								->markAsRequired()
+								->rules(['required', 'digits:7', 'numeric'])
+								->unique(ignoreRecord: true)
+								->validationMessages([
+									'required' => 'Debe indicar un número de teléfono',
+									'digits' => 'Debe tener :digits dígitos',
+									'numeric' => 'Deben ser números',
+									'unique' => 'Este teléfono se encuentra registrado',
+								]),
+						])
+					])
+					->createOptionUsing(function (array $data) {
+						return Client::create($data)->id;
+					}),
 				CheckboxList::make('tickets')
 					->label(function (Lottery $record, Get $get) {
 						$available_tickets = $record->tickets->where('client_id', null)->pluck('id')->toArray();
