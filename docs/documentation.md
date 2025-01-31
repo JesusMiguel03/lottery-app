@@ -131,7 +131,7 @@ Este módulo permite gestionar la información de los clientes.
 -   **Registrar**: Permite registrar nuevos clientes.
 -   **Editar**: Permite editar la información de clientes existentes.
 -   **Ver**: Permite visualizar la información de los clientes.
-    -   **Borrar**: Permite eliminar clientes (toda información relacionada a ellos será borrada, los boletos comprados serán reiniciados).
+-   **Borrar**: Permite eliminar clientes (toda información relacionada a ellos será borrada, los boletos comprados serán reiniciados).
 -   **Ver premios**: Permite visualizar todos los premios que ha obtenido de las rifas.
 -   **Ver boletos**: Permite visualizar los boletos que ha comprado o estan pendientes por pagar.
 
@@ -141,7 +141,7 @@ Este módulo permite gestionar las rifas y la venta de boletos.
 
 -   **Registrar**: Permite registrar nuevas rifas.
 -   **Editar**: Permite editar rifas existentes.
-    -   **Borrar**: Permite eliminar rifas (boletos, pagos y premios también serán borrados).
+-   **Borrar**: Permite eliminar rifas (boletos, pagos y premios también serán borrados).
 -   **Ver**: Permite visualizar las rifas registradas.
 -   **Venta de boletos**: Permite gestionar la venta de boletos.
 -   **Pago individual**: Permite realizar el pago de boletos de manera individual.
