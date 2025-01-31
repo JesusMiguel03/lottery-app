@@ -91,7 +91,7 @@ class CancelTicketsAction extends Action
           })
       ])
       ->action(function (Lottery $record, array $data) {
-        $record->tickets()->whereIn('id', $data['tickets'])->update(['client_id' => null]);
+        $record->tickets()->whereIn('id', $data['tickets'])->update(['client_id' => null, 'alerts' => 0, 'notified_at' => null]);
 
         $total_tickets = count($data['tickets']);
 
