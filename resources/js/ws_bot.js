@@ -41,7 +41,7 @@ client.on("message_ack", (ack) => {
     const messageStatus = ack.ack;
     const ticketId = process.argv[4].split(", ");
 
-    if (messageStatus >= 1) {
+    if (messageStatus >= 1 && ticketId != null) {
         exec(
             `php artisan ticket_notified ${ticketId}`,
             (error, stdout, stderr) => {
