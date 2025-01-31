@@ -5,29 +5,15 @@ namespace App\Console\Commands;
 use App\Models\Client;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 
-
 class SendWhatsappMessageToWinners extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'ws:winners {lottery_id}';
-
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Sends whatsapp message to client winners';
 
-    /**
-     * Execute the console command.
-     */
     public function handle()
     {
         $lottery_id = $this->argument('lottery_id');
@@ -36,20 +22,35 @@ class SendWhatsappMessageToWinners extends Command
         $this->info("Lotería {$lottery_id}");
         $this->info("[🔍] Obteniendo clientes...");
 
-        $winners = Client::whereHas('tickets', function ($query) use ($lottery_id) {
+        $winners = $this->fetchWinners($lottery_id);
+        $losers = $this->fetchLosers($lottery_id);
+
+        $this->logClientCounts($winners, $losers);
+
+        $data = $this->prepareMessages($winners, $losers);
+
+        $this->saveDataToFile($data);
+
+        $this->sendMessagesViaBot();
+
+        $end = microtime(true);
+        $this->info('[🕒] Tiempo de ejecusón: ' . ($end - $start) . ' segundos');
+
+        return 0;
+    }
+
+    private function fetchWinners($lottery_id)
+    {
+        return Client::whereHas('tickets', function ($query) use ($lottery_id) {
             $query->whereHas('payment')
                 ->where('winner', true)
                 ->where('active', true)
-                ->whereHas('lottery', function ($query) use ($lottery_id) {
-                    $query->where('id', $lottery_id);
-                });
+                ->whereHas('lottery', fn($q) => $q->where('id', $lottery_id));
         })
             ->with(['tickets' => function ($query) use ($lottery_id) {
                 $query->where('winner', true)
                     ->where('lottery_id', $lottery_id)
-                    ->with(['lottery' => function ($query) {
-                        $query->select(['id', DB::raw('name as lottery_name')]);
-                    }]);
+                    ->with(['lottery' => fn($q) => $q->select(['id', DB::raw('name as lottery_name')])]);
             }])
             ->select([
                 DB::raw("name || ' ' || last_name as client_name"),
@@ -66,24 +67,22 @@ class SendWhatsappMessageToWinners extends Command
                         'id' => $ticket['id']
                     ];
                 }
-
-                $data = [
+                return [
                     'client_name' => $client['client_name'],
                     'client_phone' => $client['client_phone'],
                     'lottery_name' => $lottery_name,
                     'tickets' => $tickets,
                 ];
-
-                return $data;
             });
+    }
 
-        $loosers = Client::whereHas('tickets', function ($query) {
+    private function fetchLosers($lottery_id)
+    {
+        return Client::whereHas('tickets', function ($query) use ($lottery_id) {
             $query->whereHas('payment')
                 ->where('winner', false)
                 ->where('active', true)
-                ->whereHas('lottery', function ($query) {
-                    $query->where('id', 7);
-                });
+                ->whereHas('lottery', fn($q) => $q->where('id', $lottery_id));
         })
             ->select([
                 DB::raw("name || ' ' || last_name as client_name"),
@@ -91,113 +90,92 @@ class SendWhatsappMessageToWinners extends Command
             ])
             ->get()
             ->toArray();
+    }
 
+    private function logClientCounts($winners, $losers)
+    {
         $winnersCount = count($winners);
-        $loosersCount = count($loosers);
-        $totalClients = $winnersCount + count($loosers);
+        $losersCount = count($losers);
+        $totalClients = $winnersCount + $losersCount;
 
         $this->info("[🧑] Clientes encontrados");
-        $this->info("     - Clientes ganadores: {$winnersCount}",);
-        $this->info("     - Clientes restantes: {$loosersCount}");
-        $this->info("     - Clientes totales:   {$totalClients}");
+        $this->info("   - Clientes ganadores: {$winnersCount}");
+        $this->info("   - Clientes restantes: {$losersCount}");
+        $this->info("   - Clientes totales: {$totalClients}");
+    }
 
+    private function prepareMessages($winners, $losers)
+    {
         $time = now()->hour;
         $app_name = config('app.name');
         $salute = $time >= 12 && $time <= 17
             ? 'Buenas tardes'
             : ($time >= 18 ? 'Buenas noches' : 'Buenos días');
 
-        $this->info("Iniciando envío de mensaje a ganadores...");
-        $this->info("------------------------------------");
         $winner_message = config('messages.winner');
         $looser_message = config('messages.looser');
 
-        foreach ($winners as $key => $client) {
+        $data = [];
+
+        foreach ($winners as $client) {
             $chatId = substr($client['client_phone'], 1);
             $tickets = $client['tickets'];
-            $ticketIds = array_map(fn($ticket) => $ticket['id'], $tickets);
-            $formatted_tickets = array_map(function ($ticket) {
-                $number = $ticket['number'];
-                return "- *$number*";
-            }, $tickets);
+            $formatted_tickets = array_map(fn($ticket) => "- *{$ticket['number']}*", $tickets);
             $ticket_numbers = implode("\n", $formatted_tickets);
-
-            $this->info(
-                "[💬] Enviando mensaje a cliente: +58{$chatId} ({$client['client_name']})"
-            );
-
             $message = str_replace(
                 ['SALUTE', 'CLIENT_NAME', 'APP_NAME', 'LOTTERY_NAME', 'TICKETS'],
                 [$salute, $client['client_name'], $app_name, $client['lottery_name'], $ticket_numbers],
                 $winner_message
             );
-
-            if ($key > 0) {
-                sleep(rand(1, 3));
-            }
-
-            $ticketIds = implode(', ', array: $ticketIds);
-
-            $process = new Process([
-                "node",
-                base_path('resources/js/ws_bot.js'),
-                $chatId,
-                $message,
-                $ticketIds
-            ]);
-            $process->setTimeout(timeout: 300);
-            $process->run(function ($type, $buffer) {
-                if (Process::ERR === $type) {
-                    $this->error($buffer);
-                } else {
-                    $this->info($buffer);
-                }
-            });
-            if (!$process->isSuccessful()) {
-                throw new ProcessFailedException($process);
-            }
+            $data['winners'][] = [
+                'message' => $message,
+                'chatId' => $chatId
+            ];
         }
 
-        $this->info("[👍] Envío finalizado");
-        $this->info(string: "Iniciando envío de mensaje al resto de clientes...");
-
-        foreach ($loosers as $key => $client) {
+        foreach ($losers as $client) {
             $chatId = substr($client['client_phone'], 1);
-
-            $this->info(
-                "[💬] Enviando mensaje a cliente: +58{$chatId} ({$client['client_name']})"
-            );
-
             $message = str_replace(
                 ['SALUTE', 'CLIENT_NAME', 'APP_NAME', 'LOTTERY_NAME'],
-                [$salute, $client['client_name'], $app_name, $client['lottery_name']],
+                [$salute, $client['client_name'], $app_name, ''], // Assuming lottery_name is not needed for losers
                 $looser_message
             );
+            $data['losers'][] = [
+                'message' => $message,
+                'chatId' => $chatId
+            ];
+        }
 
-            if ($key > 0) {
-                sleep(rand(1, 3));
-            }
+        return $data;
+    }
 
-            $process = new Process([
-                "node",
-                base_path('resources/js/ws_bot.js'),
-                $chatId,
-                $message,
-                $lottery_id
-            ]);
-            $process->setTimeout(timeout: 300);
-            $process->run();
-            if (!$process->isSuccessful()) {
-                throw new ProcessFailedException($process);
-            }
+    private function saveDataToFile($data)
+    {
+        File::put(
+            storage_path('app/public/clients.json'),
+            json_encode($data, JSON_PRETTY_PRINT)
+        );
+
+        $this->info("[✅] Información de clientes guardada con éxito...");
+    }
+
+    private function sendMessagesViaBot()
+    {
+        $this->info("[💬] Procediendo al envio de mensajes...");
+
+        $process = new Process([
+            "node",
+            base_path('resources/js/ws_bot.js')
+        ]);
+
+        $process->setTimeout(timeout: 300);
+        $process->run();
+
+        if (!$process->isSuccessful()) {
+            throw new ProcessFailedException($process);
         }
 
         $this->info("[👍] Envío finalizado");
-        $this->info("------------------------------------");
         $this->info('[✅] Mensajes enviados exitosamente');
-
-        $end = microtime(true);
-        $this->info('[🕒] Tiempo de ejecusón: ' . ($end - $start) . ' segundos');
-        return 0;
     }
 }

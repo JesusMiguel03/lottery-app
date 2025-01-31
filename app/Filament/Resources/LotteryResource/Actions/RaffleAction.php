@@ -5,18 +5,13 @@ namespace App\Filament\Resources\LotteryResource\Actions;
 use Filament\Tables\Actions\Action;
 use App\Models\Lottery;
 use App\Models\Ticket;
-use Exception;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Get;
 use Filament\Notifications\Notification;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
-use Symfony\Component\Process\Process;
-use Symfony\Component\Process\Exception\ProcessFailedException;
 
 class RaffleAction extends Action
 {
@@ -26,8 +21,12 @@ class RaffleAction extends Action
 
     $this->name('Raffle');
 
-    $this->label(fn(Lottery $record) => count($record->getWinners()) === 0 ? "Realizar sorteo" : 'Ver ganadores')
-      ->icon(fn(Lottery $record) => count($record->getWinners()) === 0 ? 'heroicon-o-play' : 'heroicon-o-star')
+    $this->label(fn(Lottery $record) => count($record->getWinners()) === 0
+      ? "Realizar sorteo"
+      : 'Ver ganadores')
+      ->icon(fn(Lottery $record) => count($record->getWinners()) === 0
+        ? 'heroicon-o-play'
+        : 'heroicon-o-star')
       ->slideOver()
       ->hidden(
         fn(Lottery $record) =>

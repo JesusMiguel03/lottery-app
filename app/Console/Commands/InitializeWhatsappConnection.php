@@ -29,13 +29,14 @@ class InitializeWhatsappConnection extends Command
     {
         $phone = $this->argument('phone');
         $now = now()->translatedFormat('d-m-Y h:i:s a');
+        $app_name = config('app.name');
 
         $this->info(string: "Iniciando la conexión con whatsapp web...");
         $process = new Process([
             "node",
             base_path('resources/js/ws_bot.js'),
             $phone,
-            "Conexión establecida exitosamente a las: {$now}"
+            "Conexión establecida exitosamente a las: {$now} por {$app_name}"
         ]);
 
         $process->setTimeout(timeout: 300);

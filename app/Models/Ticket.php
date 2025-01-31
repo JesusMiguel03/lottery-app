@@ -38,4 +38,9 @@ class Ticket extends Model
     {
         return "#{$this->number}. {$this->client->fullName}";
     }
+
+    public function scopePendingPayment($query)
+    {
+        return $query->whereDoesntHave('payment');
+    }
 }
