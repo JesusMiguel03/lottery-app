@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ClientResource\Actions\SeePrizesAction;
 use App\Filament\Resources\ClientResource\Actions\SeeTicketsAction;
 use App\Filament\Resources\ClientResource\Pages;
+use App\Filament\Traits\HasActivityLogger;
 use App\Models\Client;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Forms\Components\Select;
@@ -24,6 +25,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ClientResource extends Resource
 {
+    use HasActivityLogger;
+
     protected static ?string $model = Client::class;
 
     protected static ?string $label = "Clientes";
@@ -178,7 +181,12 @@ class ClientResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->after(function ($records) {
+                            foreach ($records as $record) {
+                                static::logActivity($record, 'delete', 'bulk_delete');
+                            }
+                        }),
                 ]),
             ])
             ->defaultSort('id', 'desc')

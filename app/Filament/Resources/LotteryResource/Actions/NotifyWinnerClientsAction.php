@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\LotteryResource\Actions;
 
+use App\Filament\Traits\HasActivityLogger;
 use Filament\Tables\Actions\Action;
 use App\Models\Lottery;
 use Exception;
@@ -46,6 +47,8 @@ class NotifyWinnerClientsAction extends Action
           if (!$process->isSuccessful()) {
             throw new ProcessFailedException($process);
           }
+
+          HasActivityLogger::logActivity($record, 'notify_winners', 'notification');
 
           Notification::make()
             ->title('Clientes notificados')

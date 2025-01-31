@@ -24,15 +24,9 @@ client.once("ready", () => {
         const data = JSON.parse(
             fs.readFileSync("./public/storage/clients.json", "utf8")
         );
-        const { winners, loosers } = data;
 
-        for (const clientData of winners) {
-            const { chatId, message } = clientData;
-            send_message(chatId, message);
-        }
-
-        for (const clientData of loosers) {
-            const { chatId, message } = clientData;
+        for (const client of data) {
+            const { chatId, message } = client;
             send_message(chatId, message);
         }
 

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\LotteryResource\Pages;
 
 use App\Filament\Resources\LotteryResource;
+use App\Filament\Traits\HasActivityLogger;
 use App\RedirectTrait;
 use Carbon\Carbon;
 use Filament\Resources\Pages\CreateRecord;
@@ -11,7 +12,7 @@ use Filament\Notifications\Notification;
 
 class CreateLottery extends CreateRecord
 {
-    use RedirectTrait;
+    use RedirectTrait, HasActivityLogger;
     protected static string $resource = LotteryResource::class;
 
     protected function handleRecordCreation(array $data): \Illuminate\Database\Eloquent\Model
@@ -57,6 +58,7 @@ class CreateLottery extends CreateRecord
                 }, range(1, $total_tickets));
 
                 $lottery->tickets()->insert($tickets);
+                $this->logLotteryCreation($lottery, $data);
 
                 Notification::make()
                     ->title('Boletos registrados')
@@ -80,5 +82,16 @@ class CreateLottery extends CreateRecord
     protected function getCreatedNotification(): ?Notification
     {
         return null;
+    }
+
+    private function logLotteryCreation($lottery, $data): void
+    {
+        HasActivityLogger::logActivity($lottery, 'create', 'create', [
+            'prizes_count' => count($data['prizes']),
+            'tickets_count' => $data['total_tickets'],
+            'prizes' => $data['prizes'],
+            'tickets_range' => "1-{$data['total_tickets']}",
+            'lottery' =>  $lottery->toArray()
+        ]);
     }
 }

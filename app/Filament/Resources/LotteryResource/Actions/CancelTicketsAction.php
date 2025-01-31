@@ -2,9 +2,11 @@
 
 namespace App\Filament\Resources\LotteryResource\Actions;
 
+use App\Filament\Traits\HasActivityLogger;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Tables\Actions\Action;
 use App\Models\Lottery;
+use Carbon\Carbon;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Get;
 use Filament\Notifications\Notification;
@@ -24,7 +26,8 @@ class CancelTicketsAction extends Action
       ->slideOver()
       ->hidden(
         fn(Lottery $record) =>
-        $record->tickets()->whereHas('client')->whereDoesntHave('payment')->count() === 0 || (now()->format('d/m/Y') > $record->final_date)
+        $record->tickets()->whereHas('client')->whereDoesntHave('payment')->count() === 0 || (strtotime(now()->format('Y-m-d')) >
+          strtotime(Carbon::createFromFormat('d/m/Y', $record->final_date)->format('Y-m-d')))
       )
       ->modalHeading(fn(Lottery $record) => "Cancelar boletos para rifa #{$record->id} ({$record->name})")
       ->form([
@@ -94,6 +97,10 @@ class CancelTicketsAction extends Action
         $record->tickets()->whereIn('id', $data['tickets'])->update(['client_id' => null, 'alerts' => 0, 'notified_at' => null]);
 
         $total_tickets = count($data['tickets']);
+
+        HasActivityLogger::logActivity($record, 'cancel_tickets', 'update', [
+          'tickets' => $data['tickets'],
+        ]);
 
         Notification::make()
           ->title('Boletos cancelados')

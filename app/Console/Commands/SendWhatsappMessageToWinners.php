@@ -132,7 +132,7 @@ class SendWhatsappMessageToWinners extends Command
                 [$salute, $client['client_name'], $app_name, $client['lottery_name'], $ticket_numbers],
                 $winner_message
             );
-            $data['winners'][] = [
+            $data[] = [
                 'message' => $message,
                 'chatId' => $chatId
             ];
@@ -142,10 +142,10 @@ class SendWhatsappMessageToWinners extends Command
             $chatId = substr($client['client_phone'], 1);
             $message = str_replace(
                 ['SALUTE', 'CLIENT_NAME', 'APP_NAME', 'LOTTERY_NAME'],
-                [$salute, $client['client_name'], $app_name, ''], // Assuming lottery_name is not needed for losers
+                [$salute, $client['client_name'], $app_name, ''],
                 $looser_message
             );
-            $data['losers'][] = [
+            $data[] = [
                 'message' => $message,
                 'chatId' => $chatId
             ];

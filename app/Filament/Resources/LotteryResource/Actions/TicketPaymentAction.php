@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\LotteryResource\Actions;
 
+use App\Filament\Traits\HasActivityLogger;
 use App\Models\Currency;
 use Filament\Forms\Components\Select;
 use Filament\Tables\Actions\Action;
@@ -210,6 +211,15 @@ class TicketPaymentAction extends Action
           'payment' => 'pago mòvil',
           'other' => 'otros'
         ];
+
+        HasActivityLogger::logActivity($record, 'ticket_payment', 'update', [
+          'total_payed' => $total_payed,
+          'ticket' => $ticket,
+          'ref' => $ref,
+          'type' => $type,
+          'client' => $ticket->client,
+          'currency' => $currency_id
+        ]);
 
         Notification::make()
           ->title('Pago registrado')

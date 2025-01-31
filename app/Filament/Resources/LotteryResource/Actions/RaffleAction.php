@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\LotteryResource\Actions;
 
+use App\Filament\Traits\HasActivityLogger;
 use Filament\Tables\Actions\Action;
 use App\Models\Lottery;
 use App\Models\Ticket;
@@ -158,6 +159,11 @@ class RaffleAction extends Action
           });
 
         $record->update(['finished_at' => now()]);
+
+        HasActivityLogger::logActivity($record, 'raffle', 'update', [
+          'tickets' => $tickets,
+          'data' => $flat_data
+        ]);
 
         Notification::make()
           ->title('Ganadores seleccionados')

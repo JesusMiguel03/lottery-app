@@ -11,6 +11,7 @@ use App\Filament\Resources\LotteryResource\Actions\SeeSoldTicketsAction;
 use App\Filament\Resources\LotteryResource\Actions\SellTicketsAction;
 use App\Filament\Resources\LotteryResource\Actions\TicketPaymentAction;
 use App\Filament\Resources\LotteryResource\Pages;
+use App\Filament\Traits\HasActivityLogger;
 use App\Livewire\LotteryTicketsComponent;
 use App\Models\Currency;
 use App\Models\Lottery;
@@ -31,7 +32,6 @@ use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\ViewAction;
@@ -42,7 +42,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class LotteryResource extends Resource
 {
-    use InteractsWithActions;
+    use InteractsWithActions, HasActivityLogger;
 
     protected static ?string $model = Lottery::class;
 
@@ -389,8 +389,8 @@ class LotteryResource extends Resource
                     ViewAction::make(),
                     EditAction::make()
                         ->hidden(
-                            fn(Lottery $record) =>
-                            now()->format('d/m/y') > $record->final_date
+                            fn(Lottery $record) => (strtotime(now()->format('Y-m-d')) >
+                                strtotime(Carbon::createFromFormat('d/m/Y', $record->final_date)->format('Y-m-d')))
                         ),
                     SellTicketsAction::make(),
                     SeeSoldTicketsAction::make(),
@@ -401,11 +401,6 @@ class LotteryResource extends Resource
                     NotifyWinnerClientsAction::make(),
                     RaffleAction::make()
                 ])
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
             ])
             ->defaultSort('id', 'desc')
             ->searchPlaceholder('Buscar rifa')

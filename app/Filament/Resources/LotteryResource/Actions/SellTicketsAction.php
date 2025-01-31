@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\LotteryResource\Actions;
 
+use App\Filament\Traits\HasActivityLogger;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Tables\Actions\Action;
@@ -454,6 +455,16 @@ class SellTicketsAction extends Action
 						->warning()
 						->send();
 				}
+
+				HasActivityLogger::logActivity($record, 'sell_tickets', 'create', [
+					'tickets' => $selected_tickets,
+					'ticket_price' => $ticket_price,
+					'total_payed' => $total_payed,
+					'ref' => $ref,
+					'type' => $type,
+					'currency' => $currency,
+					'client' => $client->toArray()
+				]);
 			});
 	}
 }

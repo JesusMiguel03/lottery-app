@@ -11,15 +11,17 @@ use Symfony\Component\Process\Exception\ProcessFailedException;
 
 class SendWhatsappMessagesToDebtors extends Command
 {
-    protected $signature = 'ws:debtors';
+    protected $signature = 'ws:debtors {lottery_id}';
     protected $description = 'Sends whatsapp messages to clients with pending tickets';
 
     public function handle()
     {
+        $lottery_id = $this->argument('lottery_id');
         $start = microtime(true);
 
+        $this->info("Lotería {$lottery_id}");
         $this->info("[🔍] Buscando clientes morosos...");
-        $clients = $this->fetchDebtors();
+        $clients = $this->fetchDebtors($lottery_id);
 
         $this->logDebtorCount($clients);
 
@@ -39,9 +41,14 @@ class SendWhatsappMessagesToDebtors extends Command
         return 0;
     }
 
-    private function fetchDebtors()
+    private function fetchDebtors($lottery_id)
     {
-        return Client::whereHas('tickets', fn($query) => $query->pendingPayment())
+        return Client::whereHas(
+            'tickets',
+            fn($query) =>
+            $query->pendingPayment()
+                ->where('lottery_id', $lottery_id)
+        )
             ->with(['tickets' => fn($query) => $query->pendingPayment()->with('lottery')])
             ->get()
             ->map(function ($client) {
@@ -72,11 +79,11 @@ class SendWhatsappMessagesToDebtors extends Command
         $salute = $this->getGreeting();
         $appName = config('app.name');
 
-        $data = ['debtors' => []];
+        $data = [];
 
         foreach ($clients as $client) {
             $messageData = $this->prepareMessageData($client, $salute, $appName);
-            $data['debtors'][] = [
+            $data[] = [
                 'message' => $messageData['message'],
                 'chatId' => $messageData['chatId']
             ];
