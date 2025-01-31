@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Client;
 use App\Models\Ticket;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\File;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 
@@ -19,12 +20,20 @@ class SendWhatsappMessagesToDebtors extends Command
 
         $this->info("[🔍] Buscando clientes morosos...");
         $clients = $this->fetchDebtors();
+
         $this->logDebtorCount($clients);
 
-        $this->sendDebtorMessages($clients);
-        $this->updateTicketAlerts($clients);
+        if (count($clients) > 0) {
+            $data = $this->prepareMessages($clients);
+            $this->saveDataToFile($data);
 
-        $this->info('[✅] Mensajes enviados exitosamente');
+            $this->sendMessagesViaBot();
+            $this->updateTicketAlerts($clients);
+            $this->info('[✅] Mensajes enviados exitosamente');
+        } else {
+            $this->info("[❌] No se encontraron deudores a los que notificar...");
+        }
+
         $this->logExecutionTime($start);
 
         return 0;
@@ -58,49 +67,31 @@ class SendWhatsappMessagesToDebtors extends Command
         $this->info("[🎫] Boletos pendientes: {$totalTickets}");
     }
 
-    private function sendDebtorMessages($clients)
+    private function prepareMessages($clients)
     {
         $salute = $this->getGreeting();
         $appName = config('app.name');
 
-        $clients->each(function ($client, $key) use ($salute, $appName) {
-            $this->sendMessageToClient($client, $salute, $appName, $key);
+        $data = ['debtors' => []];
 
-            if ($key > 0) {
-                sleep(rand(1, 3));
-            }
-        });
-    }
-
-    private function sendMessageToClient($client, $salute, $appName, $index)
-    {
-        $messageData = $this->prepareMessageData($client, $salute, $appName);
-
-        $process = new Process([
-            "node",
-            base_path('resources/js/ws_bot.js'),
-            $messageData['chatId'],
-            $messageData['message']
-        ]);
-
-        $process->setTimeout(300);
-        $process->run();
-
-        if (!$process->isSuccessful()) {
-            throw new ProcessFailedException($process);
+        foreach ($clients as $client) {
+            $messageData = $this->prepareMessageData($client, $salute, $appName);
+            $data['debtors'][] = [
+                'message' => $messageData['message'],
+                'chatId' => $messageData['chatId']
+            ];
         }
 
-        $this->info("[📤] Mensaje enviado a: {$client['client_name']}");
+        return $data;
     }
 
     private function prepareMessageData($client, $salute, $appName)
     {
-        $ticketDetails = $client['tickets']->map(
-            fn($ticket) =>
-            "Rifa: {$ticket['lottery_name']}, boleto: {$ticket['number']}"
+        $ticketDetails = collect($client['tickets'])->map(
+            fn($ticket) => "Rifa: {$ticket['lottery_name']}, boleto: {$ticket['number']}"
         )->implode(', ');
 
-        $totalDebt = $client['tickets']->sum('price');
+        $totalDebt = collect($client['tickets'])->sum('price');
         $totalTickets = count($client['tickets']);
 
         $message = "{$salute} *{$client['client_name']}*, reciba un cordial saludo de parte de _{$appName}_, "
@@ -114,11 +105,39 @@ class SendWhatsappMessagesToDebtors extends Command
         ];
     }
 
+    private function saveDataToFile($data)
+    {
+        File::put(
+            storage_path('app/public/clients.json'),
+            json_encode($data, JSON_PRETTY_PRINT)
+        );
+
+        $this->info("[✅] Información de clientes guardada con éxito...");
+    }
+
+    private function sendMessagesViaBot()
+    {
+        $this->info("[💬] Procediendo al envio de mensajes...");
+
+        $process = new Process([
+            "node",
+            base_path('resources/js/ws_bot.js')
+        ]);
+
+        $process->setTimeout(300);
+        $process->run();
+
+        if (!$process->isSuccessful()) {
+            throw new ProcessFailedException($process);
+        }
+
+        $this->info("[👍] Envío finalizado");
+    }
+
     private function updateTicketAlerts($clients)
     {
-        $ticketIds = $clients->flatMap(
-            fn($client) =>
-            collect($client['tickets'])->pluck('id')
+        $ticketIds = collect($clients)->flatMap(
+            fn($client) => collect($client['tickets'])->pluck('id')
         )->all();
 
         Ticket::whereIn('id', $ticketIds)->increment('alerts');

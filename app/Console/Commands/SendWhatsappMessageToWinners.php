@@ -14,6 +14,7 @@ class SendWhatsappMessageToWinners extends Command
     protected $signature = 'ws:winners {lottery_id}';
     protected $description = 'Sends whatsapp message to client winners';
 
+
     public function handle()
     {
         $lottery_id = $this->argument('lottery_id');
@@ -27,11 +28,15 @@ class SendWhatsappMessageToWinners extends Command
 
         $this->logClientCounts($winners, $losers);
 
-        $data = $this->prepareMessages($winners, $losers);
+        if (count($winners) > 0 || count($losers) > 0) {
+            $data = $this->prepareMessages($winners, $losers);
 
-        $this->saveDataToFile($data);
+            $this->saveDataToFile($data);
+            $this->sendMessagesViaBot();
+        } else {
+            $this->info("[❌] No se encontraron clientes a los que notificar...");
+        }
 
-        $this->sendMessagesViaBot();
 
         $end = microtime(true);
         $this->info('[🕒] Tiempo de ejecusón: ' . ($end - $start) . ' segundos');
