@@ -2,18 +2,9 @@
 
 namespace App\Filament\Resources\ClientResource\Actions;
 
-use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\CheckboxList;
 use Filament\Tables\Actions\Action;
 use App\Models\Client;
-use App\Models\Ticket;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\ViewField;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
-use Illuminate\Support\HtmlString;
 
 class SeePrizesAction extends Action
 {

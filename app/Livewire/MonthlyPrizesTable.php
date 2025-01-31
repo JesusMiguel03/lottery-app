@@ -8,7 +8,6 @@ use Filament\Support\Colors\Color;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
-use Illuminate\Contracts\View\View;
 use Filament\Widgets\TableWidget as BaseWidget;
 
 

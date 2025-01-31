@@ -11,6 +11,7 @@ use App\Filament\Resources\LotteryResource\Actions\SeeSoldTicketsAction;
 use App\Filament\Resources\LotteryResource\Actions\SellTicketsAction;
 use App\Filament\Resources\LotteryResource\Actions\TicketPaymentAction;
 use App\Filament\Resources\LotteryResource\Pages;
+use App\Livewire\LotteryTicketsComponent;
 use App\Models\Currency;
 use App\Models\Lottery;
 use Carbon\Carbon;
@@ -25,10 +26,15 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use Filament\Infolists\Components\Livewire;
+use Filament\Infolists\Components\Split;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
@@ -380,6 +386,7 @@ class LotteryResource extends Resource
             ])
             ->actions([
                 ActionGroup::make([
+                    ViewAction::make(),
                     EditAction::make()
                         ->hidden(
                             fn(Lottery $record) =>
@@ -418,7 +425,52 @@ class LotteryResource extends Resource
             'index' => Pages\ListLotteries::route('/'),
             'create' => Pages\CreateLottery::route('/create'),
             'edit' => Pages\EditLottery::route('/{record}/edit'),
+            'view' => Pages\ViewLottery::route('/{record}'),
         ];
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist->schema([
+            Split::make([
+                TextEntry::make('name')
+                    ->label('Nombre'),
+                TextEntry::make('total_price')
+                    ->label('Precio total')
+                    ->suffix(' $')
+            ]),
+            Split::make([
+                Split::make([
+                    TextEntry::make(name: 'total_payed')
+                        ->label('Total pagado')
+                        ->suffix(' $'),
+                    TextEntry::make(name: 'total_prizes_value')
+                        ->label('Valor en premios')
+                        ->suffix(' $'),
+                ]),
+                TextEntry::make('is_active')
+                    ->label('Estado')
+                    ->badge()
+                    ->color(fn(Lottery $record) => $record->is_active === 'Disponible' ? 'success' : 'danger')
+            ]),
+            TextEntry::make('description')
+                ->label('Descripción')
+                ->columnSpanFull(),
+            Split::make([
+                TextEntry::make('initial_date')
+                    ->label('Fecha de inicio'),
+                TextEntry::make('final_date')
+                    ->label('Fecha fin')
+            ]),
+            Split::make([
+                TextEntry::make('total_winners')
+                    ->label('Ganadores totales'),
+                TextEntry::make('total_tickets')
+                    ->label('Boletos totales')
+            ]),
+            Livewire::make(LotteryTicketsComponent::class)
+                ->columnSpanFull()
+        ]);
     }
 
     public static function canCreate(): bool

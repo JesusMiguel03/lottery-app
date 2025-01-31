@@ -31,4 +31,16 @@ class Payment extends Model
             ? $this->amount / $this->currency->amount
             : $this->amount;
     }
+
+    public function getTypeTranslatedAttribute()
+    {
+        $types = [
+            'usd' => 'Dólares efectivo',
+            'bs' => 'Bolìvares efectivo',
+            'payment' => 'Pago mòvil',
+            'other' => 'Otros, divisas'
+        ];
+
+        return "{$types[$this->type]}";
+    }
 }
