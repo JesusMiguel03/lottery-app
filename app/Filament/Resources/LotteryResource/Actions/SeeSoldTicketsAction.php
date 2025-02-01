@@ -31,7 +31,7 @@ class SeeSoldTicketsAction extends Action
               ->get();
 
             $formatted_tickets = $tickets->mapWithKeys(function ($ticket) {
-              $client_name = $ticket->client->fullName;
+              $client_name = $ticket->client->full_name;
               $payed = $ticket->payment?->amount ?? 0;
               $currency_icon = in_array($ticket->payment?->type, ['bs', 'payment'])
                 ? 'Bs'

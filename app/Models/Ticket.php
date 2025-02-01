@@ -36,7 +36,7 @@ class Ticket extends Model
 
     public function getTicketOwnerNameAttribute()
     {
-        return "#{$this->number}. {$this->client->fullName}";
+        return "#{$this->number}. {$this->client->full_name}";
     }
 
     public function scopePendingPayment($query)

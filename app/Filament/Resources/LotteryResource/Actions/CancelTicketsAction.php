@@ -54,7 +54,7 @@ class CancelTicketsAction extends Action
                 $alerts = $ticket->alerts ?? 0;
                 $client_name = empty($ticket->client)
                   ? "Disponible {$ticket_price}$"
-                  : "{$ticket->client->fullName} ({$alerts})";
+                  : "{$ticket->client->full_name} ({$alerts})";
                 return [
                   $ticket->id => "{$ticket->number} - {$client_name}"
                 ];

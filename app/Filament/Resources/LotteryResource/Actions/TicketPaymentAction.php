@@ -195,7 +195,7 @@ class TicketPaymentAction extends Action
         $ticket = Ticket::find($data['ticket_id']);
         $ref = $data['ref'] ?? 0;
         $type = $data['type'] ?? 0;
-        $client_name = $ticket->client->fullName;
+        $client_name = $ticket->client->full_name;
 
         $currency_id = Currency::latest()->first()->id;
         $ticket->payment()->create([

@@ -49,8 +49,8 @@ class SellTicketsAction extends Action
 					->label('Cliente')
 					->options(Client::query()->select([
 						'id',
-						DB::raw("(name || ' ' || last_name) as full_name"),
-					])->pluck('full_name', 'id'))
+						DB::raw("(name || ' ' || last_name) as client_name"),
+					])->pluck('client_name', 'id'))
 					->markAsRequired()
 					->rules(['required'])
 					->validationMessages([
@@ -161,7 +161,7 @@ class SellTicketsAction extends Action
 
 						$ticket_price = empty($record->total_price) ? 0 : $record->total_price / $record->tickets->count();
 						$formatted_tickets = $tickets->mapWithKeys(function ($ticket) use ($ticket_price) {
-							$client_name = empty($ticket->client) ? "Disponible {$ticket_price}$" : $ticket->client->fullName;
+							$client_name = empty($ticket->client) ? "Disponible {$ticket_price}$" : $ticket->client->full_name;
 							return [
 								$ticket->id => "{$ticket->number} - {$client_name}"
 							];
@@ -407,7 +407,7 @@ class SellTicketsAction extends Action
 				}
 
 				$has_payments = $total_payed > 0;
-				$client_name = $client->fullName;
+				$client_name = $client->full_name;
 				$tickets = Ticket::findMany($selected_tickets);
 				$client->tickets()->saveMany($tickets);
 				$selected_tickets = count($selected_tickets);

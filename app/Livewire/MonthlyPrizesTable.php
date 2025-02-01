@@ -37,7 +37,7 @@ class MonthlyPrizesTable extends BaseWidget
           ->formatStateUsing(
             fn(Prize $record) =>
             $record->winner->count() > 0
-              ? $record->winner[0]->client->fullName
+              ? $record->winner[0]->client->full_name
               : 'Pendiente'
           ),
         TextColumn::make('lottery.dateRange')

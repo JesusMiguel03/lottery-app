@@ -54,18 +54,24 @@ class RaffleAction extends Action
             $prizes = $record->prizes;
 
             $ticketList = $tickets->map(function ($ticket, $index) use ($prizes) {
-              $prize = $prizes[$ticket->order - 1 > 0 ? $ticket->order - 1 : 0];
-              ++$index;
-              return "<li class='py-2 px-6 border border-neutral-400 rounded-md'>
-                        <div class='flex flex-col justify-center items-center'>
-                          <h3 class='font-bold'>Ganador &num;{$index}</h3>
-                          <h6 class='text-lg font-semibold'>
-                            {$ticket->client->fullname}
-                          </h6>
-                          <p>Premio: {$prize->name} ({$prize->value}$)</p>
-                          <p>Boleto &num;{$ticket->number}</p>
-                        </div>
-                    </li>";
+              if (count($prizes) > $index) {
+                $prize = $prizes[$ticket->order - 1 > 0 ? $ticket->order - 1 : 0];
+                ++$index;
+                $route = route('filament.admin.resources.clients.view', $ticket->client->id);
+                return "
+                    <a href='{$route}'>
+                      <li class='py-2 px-6 border border-neutral-400 rounded-md'>
+                          <div class='flex flex-col justify-center items-center'>
+                            <h3 class='font-bold'>Ganador &num;{$index}</h3>
+                            <h6 class='text-lg font-semibold'>
+                              {$ticket->client->full_name}
+                            </h6>
+                            <p>Premio: {$prize->name} ({$prize->value}$)</p>
+                            <p>Boleto &num;{$ticket->number}</p>
+                          </div>
+                      </li>
+                    </a>";
+              }
             })->implode('');
 
             return new HtmlString("
@@ -153,7 +159,7 @@ class RaffleAction extends Action
 
             Notification::make()
               ->title(Str::markdown("Ganador **#{$current_index}** seleccionado"))
-              ->body(Str::markdown("Se ha seleccionado al cliente **{$ticket->client->fullName}** como ganador **#{$current_index}** de la rifa **#{$record->id} ({$record->name})**"))
+              ->body(Str::markdown("Se ha seleccionado al cliente **{$ticket->client->full_name}** como ganador **#{$current_index}** de la rifa **#{$record->id} ({$record->name})**"))
               ->success()
               ->send();
           });

@@ -26,7 +26,7 @@ class LotteryTicketsComponent extends Component
                     $clients[$client->id]['tickets'][] = $ticket->id;
                 } else {
                     $clients[$client->id] = [
-                        'name' => $client->fullName,
+                        'name' => $client->full_name,
                         'tickets' => [$ticket->id]
                     ];
                 }
@@ -47,7 +47,7 @@ class LotteryTicketsComponent extends Component
         $ticket = Ticket::find($ticketId);
         if ($ticket) {
             $this->ticketNumber = $ticket->number;
-            $this->ticketClientName = $ticket->client->fullName ?? 'Sin asignar';
+            $this->ticketClientName = $ticket->client->full_name ?? 'Sin asignar';
             $this->ticketPrice = $this->record->ticket_price();
             $this->ticketPayment = $ticket->payment;
             $this->ticketPaymentAmount = $ticket->payment->amount ?? 0;

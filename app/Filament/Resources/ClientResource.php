@@ -129,7 +129,7 @@ class ClientResource extends Resource
                 TextColumn::make('id')
                     ->label('ID')
                     ->sortable(),
-                TextColumn::make('fullName')
+                TextColumn::make('full_name')
                     ->label('Nombre')
                     ->sortable()
                     ->searchable(['name', 'last_name']),
@@ -152,7 +152,7 @@ class ClientResource extends Resource
                                 ->orWhere('doc', 'like', "%{$upper_string}%");
                         }
                     }),
-                TextColumn::make('phoneNumber')
+                TextColumn::make('phone_number')
                     ->label('Teléfono')
                     ->searchable(true, function (Builder $query, string $search) {
                         if (strlen($search) > 4) {
@@ -222,10 +222,10 @@ class ClientResource extends Resource
             ->schema([
                 Fieldset::make('Datos personales')
                     ->schema([
-                        TextEntry::make('fullName')
+                        TextEntry::make('full_name')
                             ->label('Nombre y apellido'),
                         Split::make([
-                            TextEntry::make('phoneNumber')
+                            TextEntry::make('phone_number')
                                 ->label('Teléfono'),
                             TextEntry::make('document')
                                 ->label('Cédula'),

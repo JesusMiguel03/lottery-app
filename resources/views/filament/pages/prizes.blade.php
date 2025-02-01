@@ -18,7 +18,7 @@
                     <div class='flex flex-col justify-center items-center'>
                         <h3 class='font-bold'>Ganador &num;{{ $prize->order }}</h3>
                         <h6 class='text-lg font-semibold'>
-                            {{ $ticket->client->fullname }}
+                            {{ $ticket->client->full_name }}
                         </h6>
                         <p>Premio: {{ $prize->name }} ({{ $prize->value }}$)</p>
                         <p>Boleto &num;{{ $ticket->number }}</p>

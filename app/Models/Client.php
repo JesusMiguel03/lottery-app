@@ -29,23 +29,19 @@ class Client extends Model
         });
     }
 
-    public function fullName(): Attribute
+    public function getFullNameAttribute()
     {
-        return Attribute::make(
-            get: fn(string | null $value, array $attributes): string => $attributes['name'] . ' ' . $attributes['last_name']
-        );
+        return "{$this->name} {$this->last_name}";
     }
-    public function document(): Attribute
+
+    public function getDocumentAttribute()
     {
-        return Attribute::make(
-            get: fn(string | null $value, array $attributes): string => $attributes['doc_type'] . '-' . $attributes['doc']
-        );
+        return "{$this->doc_type}-{$this->doc}";
     }
-    public function phoneNumber(): Attribute
+
+    public function getPhoneNumberAttribute()
     {
-        return Attribute::make(
-            get: fn(string | null $value, array $attributes): string => $attributes['code'] . $attributes['phone']
-        );
+        return "{$this->code}-{$this->phone}";
     }
 
     public function getPendingTicketsJson()
