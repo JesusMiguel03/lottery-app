@@ -27,3 +27,6 @@ yarn-error.log
 .wwebjs_cache
 /public/logs/*
 composer.lock
+/public/js/filament/*
+/public/css/filament/*
+package-lock.json
