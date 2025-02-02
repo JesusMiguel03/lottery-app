@@ -1,66 +1,69 @@
+import { makeWASocket, useMultiFileAuthState } from "@whiskeysockets/baileys";
 import fs from "fs";
 import qrcode from "qrcode-terminal";
-import pkg from "whatsapp-web.js";
-const { Client, LocalAuth } = pkg;
 
-const client = new Client({
-    authStrategy: new LocalAuth(),
-});
+async function run() {
+    const { state, saveCreds } = await useMultiFileAuthState("./baileys_auth");
+    const sock = makeWASocket({ auth: state, printQRInTerminal: false });
+    let isMessageSent = false;
 
-client.initialize();
+    sock.ev.on("connection.update", (update) => {
+        const { connection, qr } = update;
 
-client.on("qr", (qr) => {
-    console.log("Obteniendo QR");
-    qrcode.generate(qr, { small: true });
-});
-
-client.once("ready", () => {
-    console.log("¡Se ha establecido la conexión con whatsapp web!");
-    const chatId = process.argv[2];
-    const message = process.argv[3];
-
-    console.log("Iniciando envio de mensajes");
-    if (chatId == null && message == null) {
-        const data = JSON.parse(
-            fs.readFileSync("./public/storage/clients.json", "utf8")
-        );
-
-        for (const client of data) {
-            const { chatId, message } = client;
-            send_message(chatId, message);
+        if (qr) {
+            console.log("Obteniendo QR");
+            qrcode.generate(qr, { small: true });
         }
 
-        console.log("Todos los mensajes fueron enviados exitosamente");
-    } else {
-        console.log("Enviando mensaje");
-        send_message(chatId, message);
-    }
-});
+        if (connection === "open" && !isMessageSent) {
+            console.log("¡Conexión establecida con WhatsApp!");
+            isMessageSent = true;
+            sendMessages().catch((err) => {
+                console.error("Error sending messages:", err);
+            });
+        }
 
-client.on("authenticated", () => {
-    console.log("Sesión iniciada");
-});
+        if (connection === "close") {
+            console.log("Desconectado. Reconectando...");
+            run();
+        }
+    });
 
-client.on("disconnected", (reason) => {
-    console.log("Se desconectó: ", reason);
-});
+    sock.ev.on("creds.update", saveCreds);
 
-client.on("auth_failure", (message) => {
-    console.log("Error al autenticar:", message);
-});
+    async function sendMessages() {
+        const filePath = "./public/storage/clients.json";
+        if (!fs.existsSync(filePath)) {
+            console.log("Archivo clients.json no encontrado.");
+            process.exit(1);
+        }
 
-async function send_message(chatId, message) {
-    try {
-        console.time("Tiempo transcurrido");
-        const chat = await client.getChatById("58" + chatId + "@c.us");
-        await chat.sendMessage(message);
+        const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
+        if (!data?.length) {
+            console.log("No hay clientes para notificar.");
+        }
 
-        await new Promise((resolve) => setTimeout(resolve, 6000));
+        for (const client of data) {
+            await sendMessage(client.chatId, client.message);
+        }
 
-        console.timeEnd("Tiempo transcurrido");
+        console.log("Mensajes enviados exitosamente");
+        fs.unlinkSync(filePath);
         process.exit(0);
-    } catch (error) {
-        console.error("Hubo un error al enviar el mensaje", error);
-        process.exit(1);
+    }
+
+    async function sendMessage(chatId, message) {
+        try {
+            const id = `58${chatId}@s.whatsapp.net`;
+            await sock.sendMessage(id, { text: message });
+        } catch (error) {
+            console.error("Error al enviar mensaje:", error);
+            throw error; // Propagate error to catch in sendMessages
+        }
     }
 }
+
+run().catch((err) => {
+    console.error("Unhandled error:", err);
+    process.exit(1);
+});

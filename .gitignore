@@ -30,3 +30,4 @@ composer.lock
 /public/js/filament/*
 /public/css/filament/*
 package-lock.json
+baileys_auth

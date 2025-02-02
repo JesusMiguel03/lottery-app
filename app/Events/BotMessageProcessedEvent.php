@@ -10,5 +10,5 @@ class BotMessageProcessedEvent
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public function __construct(public int $clientCount, public string $lotteryId, public string $objetive) {}
+    public function __construct(public int $clientCount, public string $lotteryId, public string $objective) {}
 }

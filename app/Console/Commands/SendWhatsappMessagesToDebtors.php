@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Client;
+use App\Models\Lottery;
 use App\Models\Ticket;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
@@ -43,6 +44,8 @@ class SendWhatsappMessagesToDebtors extends Command
 
     private function fetchDebtors($lottery_id)
     {
+        $ticketPrice = Lottery::find($lottery_id)->ticket_price();
+
         return Client::whereHas(
             'tickets',
             fn($query) =>
@@ -51,14 +54,14 @@ class SendWhatsappMessagesToDebtors extends Command
         )
             ->with(['tickets' => fn($query) => $query->pendingPayment()->with('lottery')])
             ->get()
-            ->map(function ($client) {
+            ->map(function ($client) use ($ticketPrice) {
                 return [
                     'client_name' => $client->full_name,
                     'phone' => str_replace('-', '', substr($client->phone_number, 1)),
                     'tickets' => $client->tickets->map(fn($ticket) => [
                         'id' => $ticket->id,
                         'number' => $ticket->number,
-                        'price' => $ticket->price,
+                        'price' => $ticketPrice,
                         'lottery_name' => $ticket->lottery->name
                     ])
                 ];

@@ -16,28 +16,24 @@ class NotifyWhatsappMessageSentListener
         $user = User::find(1);
         $lottery = Lottery::find($event->lotteryId);
 
-        if ($event->objetive === 'winners') {
+        if ($event->objective === 'winners') {
             Ticket::where('lottery_id', $event->lotteryId)->update([
                 'notified_at' => now()
             ]);
 
             Notification::make()
                 ->title('Clientes ganadores notificados')
-                ->body(Str::markdown("Se notificaron (**{$event->clientCount}**) clientes ganadores de la rifa {**#$event->lotteryId**} (**{$lottery->name}**)."))
+                ->body(Str::markdown("Se notificaron (**{$event->clientCount}**) clientes ganadores de la rifa (**#{$event->lotteryId}**) (**{$lottery->name}**)."))
                 ->success()
                 ->sendToDatabase($user);
         } else {
-            Ticket::where('lottery_id', $event->lotteryId)
-                ->whereNotNull('client_id')
-                ->increment('alerts');
-
             $ticketsCount = Ticket::where('lottery_id', $event->lotteryId)
                 ->whereNotNull('client_id')
                 ->count();
 
             Notification::make()
                 ->title('Clientes deudores notificados')
-                ->body(Str::markdown("Se notificaron (**{$event->clientCount}**) clientes deudores de la rifa {**#$event->lotteryId**} (**{$lottery->name}**). Un total de (**{$ticketsCount}**) boletos fueron notificados"))
+                ->body(Str::markdown("Se notificaron (**{$event->clientCount}**) clientes deudores de la rifa (**#{$event->lotteryId}**) (**{$lottery->name}**). Un total de (**{$ticketsCount}**) boletos fueron notificados"))
                 ->success()
                 ->sendToDatabase($user);
         }

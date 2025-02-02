@@ -16,14 +16,14 @@ class ProcessWhatsappMessagesJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function __construct(public int $clientCount, public int $lotteryId, public string $objetive) {}
+    public function __construct(public int $clientCount, public int $lotteryId, public string $objective) {}
 
     public function handle()
     {
         $process = new Process([
             'php',
             'artisan',
-            $this->objetive === 'debtors' ? 'ws:debtors' : 'ws:winners',
+            $this->objective === 'debtors' ? 'ws:debtors' : 'ws:winners',
             $this->lotteryId
         ]);
         $process->setTimeout(300);
@@ -39,12 +39,12 @@ class ProcessWhatsappMessagesJob implements ShouldQueue
         if (!File::exists(public_path('logs'))) {
             File::makeDirectory(public_path('logs'), 0755, true);
         }
-        File::append($logFilePath, now() . ' - ' . "[ProcessWhatsappMessagesJob - $this->objetive]" . ' ' . $output . PHP_EOL);
+        File::append($logFilePath, now() . ' - ' . "[ProcessWhatsappMessagesJob - $this->objective]" . ' ' . $output . PHP_EOL);
 
         event(new BotMessageProcessedEvent(
             $this->clientCount,
             $this->lotteryId,
-            $this->objetive
+            $this->objective
         ));
     }
 }
