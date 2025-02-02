@@ -297,6 +297,7 @@ class LotteryResource extends Resource
             ->modifyQueryUsing(function (Builder $query) {
                 return $query->with('tickets');
             })
+            ->heading('Nota: Para corroborar que los clientes fueron notificados espere aproximadamente 1 minuto y recargue la página y corrobore en el ícono de campana, si no aparece ninguna notificación puede que deba esperar un poco más de tiempo (varía acorde a la cantidad de clientes y boletos a notificar), puede continuar interactuando con el sistema y visualizar dichas notificaciones en cualquier momento')
             ->columns([
                 TextColumn::make('id')
                     ->label('ID')

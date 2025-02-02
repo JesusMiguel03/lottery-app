@@ -54,7 +54,7 @@ class SendWhatsappMessagesToDebtors extends Command
             ->map(function ($client) {
                 return [
                     'client_name' => $client->full_name,
-                    'phone' => substr($client->phone_number, 1),
+                    'phone' => str_replace('-', '', substr($client->phone_number, 1)),
                     'tickets' => $client->tickets->map(fn($ticket) => [
                         'id' => $ticket->id,
                         'number' => $ticket->number,
