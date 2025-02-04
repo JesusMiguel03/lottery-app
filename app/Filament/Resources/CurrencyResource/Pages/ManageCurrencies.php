@@ -43,7 +43,6 @@ class ManageCurrencies extends ManageRecords
             EditAction::make()
                 ->modalHeading('Editar Tasa')
                 ->using(function (Model $record, array $data) {
-                    dd('running');
                     $record->update($data);
                     $this->afterSave($record);
 

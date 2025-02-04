@@ -35,7 +35,11 @@ async function run() {
         const filePath = "./public/storage/clients.json";
         if (!fs.existsSync(filePath)) {
             console.log("Archivo clients.json no encontrado.");
-            process.exit(1);
+            const chatId = process.argv[2];
+            const message = process.argv[3];
+
+            await sendMessage(chatId, message);
+            process.exit(0);
         }
 
         const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
@@ -56,9 +60,11 @@ async function run() {
         try {
             const id = `58${chatId}@s.whatsapp.net`;
             await sock.sendMessage(id, { text: message });
+            console.log("Mensaje enviado a ", chatId);
+            console.log(message);
         } catch (error) {
             console.error("Error al enviar mensaje:", error);
-            throw error; // Propagate error to catch in sendMessages
+            throw error;
         }
     }
 }

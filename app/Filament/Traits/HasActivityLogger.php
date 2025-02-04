@@ -42,10 +42,10 @@ trait HasActivityLogger
         'user_name' => auth()->user()?->name ?? 'System',
         'action' => $action,
         'model' => $record ? get_class($record) : 'Notification',
-        'model_id' => $record->id,
+        'model_id' => $record->id ?? 'Notification',
         'form_data' => $action === 'create'
           ? request()->except(['password', 'password_confirmation'])
-          : $record->getChanges(),
+          : ($record ? $record->getChanges() : []),
         'interaction_type' => $interactionType,
         'result' => 'success',
         'ip_address' => request()->ip(),
@@ -53,9 +53,9 @@ trait HasActivityLogger
         'additional_data' => $additionalData
       ];
 
-      Log::channel('activity')->info('Lottery Activity', $logData);
+      Log::channel('activity')->info('App Activity', $logData);
     } catch (\Exception $e) {
-      Log::channel('daily')->error("Lottery log failed: " . $e->getMessage());
+      Log::channel('daily')->error("App log failed: " . $e->getMessage());
     }
   }
 }
