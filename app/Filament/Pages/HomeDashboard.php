@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Widgets\Whatsapp_qr;
 use App\Livewire\MonthlyPrizesTable;
 use App\Livewire\MontlyPaymentsChart;
 use App\Livewire\NewClientsChart;
@@ -22,10 +23,11 @@ class HomeDashboard extends Page
     {
         return [
             StatsOverview::class,
+            Whatsapp_qr::class,
             TicketsSoldChart::class,
             NewClientsChart::class,
             MontlyPaymentsChart::class,
-            MonthlyPrizesTable::class
+            MonthlyPrizesTable::class,
         ];
     }
 }

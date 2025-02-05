@@ -1,11 +1,12 @@
 import { makeWASocket, useMultiFileAuthState } from "@whiskeysockets/baileys";
 import fs from "fs";
 import path from "path";
-import qrcode from "qrcode-terminal";
+import QRCode from "qrcode";
 
 const STATUS_DIR = "./public/storage/";
 const CLIENTS_FILE = "./public/storage/clients.json";
 const LOTTERY_FILE = "./public/storage/lottery.json";
+const QR_FILE = "./public/storage/qr.png";
 
 let checkInterval = null;
 let isProcessing = false;
@@ -23,11 +24,22 @@ async function run() {
 
         if (qr) {
             console.log("Obteniendo QR");
-            qrcode.generate(qr, { small: true });
+            QRCode.toFile(QR_FILE, qr, {
+                color: {
+                    dark: "#000000",
+                    light: "#ffffff",
+                },
+            });
+
+            console.log("QR generado en:", QR_FILE);
         }
 
         if (connection === "open") {
             console.log("¡Conexión establecida con WhatsApp!");
+            if (fs.existsSync(QR_FILE)) {
+                fs.unlinkSync(QR_FILE);
+            }
+
             sendMessages(sock).catch(console.error);
             checkInterval = setInterval(() => {
                 sendMessages(sock).catch(console.error);
