@@ -1,11 +1,22 @@
 import { makeWASocket, useMultiFileAuthState } from "@whiskeysockets/baileys";
 import fs from "fs";
+import path from "path";
 import qrcode from "qrcode-terminal";
+
+const STATUS_DIR = "./public/storage/";
+const CLIENTS_FILE = "./public/storage/clients.json";
+const LOTTERY_FILE = "./public/storage/lottery.json";
+
+let checkInterval = null;
+let isProcessing = false;
 
 async function run() {
     const { state, saveCreds } = await useMultiFileAuthState("./baileys_auth");
-    const sock = makeWASocket({ auth: state, printQRInTerminal: false });
-    let isMessageSent = false;
+    const sock = makeWASocket({
+        auth: state,
+        printQRInTerminal: false,
+        keepAliveIntervalMs: 10000,
+    });
 
     sock.ev.on("connection.update", (update) => {
         const { connection, qr } = update;
@@ -15,61 +26,91 @@ async function run() {
             qrcode.generate(qr, { small: true });
         }
 
-        if (connection === "open" && !isMessageSent) {
+        if (connection === "open") {
             console.log("¡Conexión establecida con WhatsApp!");
-            isMessageSent = true;
-            sendMessages().catch((err) => {
-                console.error("Error sending messages:", err);
-            });
+            sendMessages(sock).catch(console.error);
+            checkInterval = setInterval(() => {
+                sendMessages(sock).catch(console.error);
+            }, 5000);
         }
 
         if (connection === "close") {
             console.log("Desconectado. Reconectando...");
+            if (checkInterval) {
+                clearInterval(checkInterval);
+                checkInterval = null;
+            }
             run();
         }
     });
 
     sock.ev.on("creds.update", saveCreds);
+}
 
-    async function sendMessages() {
-        const filePath = "./public/storage/clients.json";
-        if (!fs.existsSync(filePath)) {
+async function sendMessages(sock) {
+    if (isProcessing) return;
+    isProcessing = true;
+
+    try {
+        if (!fs.existsSync(CLIENTS_FILE)) {
             console.log("Archivo clients.json no encontrado.");
             const chatId = process.argv[2];
             const message = process.argv[3];
 
-            await sendMessage(chatId, message);
-            process.exit(0);
+            if (chatId && message) {
+                await sendMessage(sock, chatId, message);
+            }
+            return;
         }
 
-        const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
+        const data = Object.values(
+            JSON.parse(fs.readFileSync(CLIENTS_FILE, "utf8"))
+        );
         if (!data?.length) {
             console.log("No hay clientes para notificar.");
+            return;
         }
 
+        let messagesSend = 0;
         for (const client of data) {
-            await sendMessage(client.chatId, client.message);
+            await sendMessage(sock, client.chatId, client.message);
+            messagesSend++;
         }
 
-        console.log("Mensajes enviados exitosamente");
-        fs.unlinkSync(filePath);
-        process.exit(0);
+        await generateStatusFile(messagesSend);
+
+        console.log("Todos los mensajes confirmados..");
+        fs.unlinkSync(CLIENTS_FILE);
+    } catch (err) {
+        console.error("Error sending messages:", err);
+    } finally {
+        isProcessing = false;
     }
+}
 
-    async function sendMessage(chatId, message) {
-        try {
-            const id = `58${chatId}@s.whatsapp.net`;
-            await sock.sendMessage(id, { text: message });
-            console.log("Mensaje enviado a ", chatId);
-            console.log(message);
-        } catch (error) {
-            console.error("Error al enviar mensaje:", error);
-            throw error;
-        }
+async function generateStatusFile(messagesSend) {
+    const data = JSON.parse(fs.readFileSync(LOTTERY_FILE, "utf8"));
+    const statusData = {
+        data,
+        totalMessages: messagesSend,
+    };
+
+    const finalPath = path.join(STATUS_DIR, `status.json`);
+    fs.mkdirSync(STATUS_DIR, { recursive: true });
+    fs.writeFileSync(finalPath, JSON.stringify(statusData));
+    fs.unlinkSync(LOTTERY_FILE);
+}
+
+async function sendMessage(sock, chatId, message) {
+    try {
+        const id = `58${chatId}@s.whatsapp.net`;
+        await sock.sendMessage(id, { text: message });
+    } catch (error) {
+        console.error("Error al enviar mensaje:", error);
+        throw error;
     }
 }
 
 run().catch((err) => {
     console.error("Unhandled error:", err);
-    process.exit(1);
 });

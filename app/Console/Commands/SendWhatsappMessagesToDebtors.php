@@ -20,6 +20,8 @@ class SendWhatsappMessagesToDebtors extends Command
         $lottery_id = $this->argument('lottery_id');
         $start = microtime(true);
 
+        $lottery = Lottery::select(['id', 'name'])->find($lottery_id)->toArray();
+
         $this->info("Lotería {$lottery_id}");
         $this->info("[🔍] Buscando clientes morosos...");
         $clients = $this->fetchDebtors($lottery_id);
@@ -27,8 +29,9 @@ class SendWhatsappMessagesToDebtors extends Command
         $this->logDebtorCount($clients);
 
         if (count($clients) > 0) {
-            $data = $this->prepareMessages($clients);
-            $this->saveDataToFile($data);
+            $data = $this->prepareMessages($clients, $lottery);
+            $this->saveClientsDataToFile($data);
+            $this->saveLotteryDataToFile(array_merge($lottery, ['objective' => 'debtors']));
 
             $this->sendMessagesViaBot();
             $this->updateTicketAlerts($clients);
@@ -115,7 +118,7 @@ class SendWhatsappMessagesToDebtors extends Command
         ];
     }
 
-    private function saveDataToFile($data)
+    private function saveClientsDataToFile($data)
     {
         File::put(
             storage_path('app/public/clients.json'),
@@ -124,6 +127,17 @@ class SendWhatsappMessagesToDebtors extends Command
 
         $this->info("[✅] Información de clientes guardada con éxito...");
     }
+
+    private function saveLotteryDataToFile($data)
+    {
+        File::put(
+            storage_path('app/public/lottery.json'),
+            json_encode($data, JSON_PRETTY_PRINT)
+        );
+
+        $this->info("[✅] Información de lotería guardada con éxito...");
+    }
+
 
     private function sendMessagesViaBot()
     {

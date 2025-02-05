@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Client;
+use App\Models\Lottery;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -20,6 +21,8 @@ class SendWhatsappMessageToWinners extends Command
         $lottery_id = $this->argument('lottery_id');
         $start = microtime(true);
 
+        $lottery = Lottery::select(['id', 'name'])->find($lottery_id)->toArray();
+
         $this->info("Lotería {$lottery_id}");
         $this->info("[🔍] Obteniendo clientes...");
 
@@ -31,7 +34,8 @@ class SendWhatsappMessageToWinners extends Command
         if (count($winners) > 0 || count($losers) > 0) {
             $data = $this->prepareMessages($winners, $losers);
 
-            $this->saveDataToFile($data);
+            $this->saveClientsDataToFile($data);
+            $this->saveLotteryDataToFile(array_merge($lottery, ['objective' => 'winners']));
             $this->sendMessagesViaBot();
         } else {
             $this->info("[❌] No se encontraron clientes a los que notificar...");
@@ -154,7 +158,7 @@ class SendWhatsappMessageToWinners extends Command
         return $data;
     }
 
-    private function saveDataToFile($data)
+    private function saveClientsDataToFile($data)
     {
         File::put(
             storage_path('app/public/clients.json'),
@@ -162,6 +166,16 @@ class SendWhatsappMessageToWinners extends Command
         );
 
         $this->info("[✅] Información de clientes guardada con éxito...");
+    }
+
+    private function saveLotteryDataToFile($data)
+    {
+        File::put(
+            storage_path('app/public/lottery.json'),
+            json_encode($data, JSON_PRETTY_PRINT)
+        );
+
+        $this->info("[✅] Información de lotería guardada con éxito...");
     }
 
     private function sendMessagesViaBot()
