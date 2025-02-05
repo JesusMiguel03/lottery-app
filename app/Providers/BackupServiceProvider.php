@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Models\Backup;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
 
 class BackupServiceProvider extends ServiceProvider
@@ -23,14 +25,17 @@ class BackupServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $today = Carbon::now()->toDateString();
+        $file = File::exists('./database/database.sqlite');
 
-        $backupLog = Backup::firstOrNew([]);
+        if ($file) {
+            $backupLog = Backup::firstOrNew([]);
 
-        if ($backupLog->executed_at !== $today) {
-            Artisan::call('backup:run --only-db');
+            if ($backupLog->executed_at !== $today) {
+                Artisan::call('backup:run --only-db');
 
-            $backupLog->executed_at = $today;
-            $backupLog->save();
+                $backupLog->executed_at = $today;
+                $backupLog->save();
+            }
         }
     }
 }
