@@ -59,7 +59,6 @@ class AdminPanelProvider extends PanelProvider
             ->favicon(asset('favicon.ico'))
             ->plugins([
                 FilamentApexChartsPlugin::make(),
-            ])
-            ->databaseNotifications();
+            ]);
     }
 }
