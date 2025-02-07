@@ -29,6 +29,7 @@ class ManageCurrencies extends ManageRecords
         return [
             Actions\CreateAction::make()
                 ->modalHeading('Crear Tasa')
+                ->modalWidth('lg')
                 ->using(function (array $data) {
                     $record = static::getModel()::create($data);
                     $this->afterCreateModel($record);
