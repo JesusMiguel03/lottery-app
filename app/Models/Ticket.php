@@ -15,6 +15,7 @@ class Ticket extends Model
         'notified_at',
         'client_id',
         'lottery_id',
+        'prize_id',
         'created_at',
         'updated_at',
     ];
@@ -24,9 +25,9 @@ class Ticket extends Model
         return $this->belongsTo(Client::class);
     }
 
-    public function payment()
+    public function payments()
     {
-        return $this->hasOne(Payment::class);
+        return $this->hasMany(Payment::class);
     }
 
     public function lottery()
@@ -41,6 +42,16 @@ class Ticket extends Model
 
     public function scopePendingPayment($query)
     {
-        return $query->whereDoesntHave('payment');
+        return $query->whereDoesntHave('payments');
+    }
+
+    public function getTotalPayedAttribute()
+    {
+        return round($this->payments->sum('payed_amount'), 2);
+    }
+
+    public function prize()
+    {
+        return $this->belongsTo(Prize::class);
     }
 }

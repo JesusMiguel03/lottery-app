@@ -26,7 +26,11 @@
 
 -> php artisan migrate --seed
 
-7.  Prepara el sistema para ser usado:
+7. Enlaza el storage:
+
+-> php artisan storage:link
+
+8.  Prepara el sistema para ser usado:
 
 -> php artisan filament:assets
 -> composer dump-autoload --optimize

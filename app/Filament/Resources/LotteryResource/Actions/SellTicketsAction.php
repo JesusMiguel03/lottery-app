@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Closure;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Split;
 use Filament\Forms\Components\TextInput;
@@ -21,7 +22,9 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
@@ -158,10 +161,21 @@ class SellTicketsAction extends Action
 					})
 					->options(function (Lottery $record) {
 						$tickets = $record->tickets()->with('client')->select('number', 'id', 'client_id')->get();
+						$ticket_price = $record->ticket_price;
 
-						$ticket_price = empty($record->total_price) ? 0 : $record->total_price / $record->tickets->count();
 						$formatted_tickets = $tickets->mapWithKeys(function ($ticket) use ($ticket_price) {
-							$client_name = empty($ticket->client) ? "Disponible {$ticket_price}$" : $ticket->client->full_name;
+							$ticket_payed = round($ticket->total_payed, 2);
+							$payment = $ticket->total_payed === 0
+								? 'Pendiente'
+								: (
+									$ticket->total_payed === $ticket_price
+									? "{$ticket->total_payed} $"
+									: "{$ticket->total_payed} $ / {$ticket_price} $"
+								);
+							$client_name = empty($ticket->client)
+								? "Disponible {$ticket_price}$"
+								: "{$ticket->client->full_name} ({$payment})";
+
 							return [
 								$ticket->id => "{$ticket->number} - {$client_name}"
 							];
@@ -227,45 +241,47 @@ class SellTicketsAction extends Action
 								return "{$record->totalLeft}$";
 							}),
 					])->columns(3),
-				Fieldset::make('Pagos')
+				Repeater::make('payments')
+					->label('Pagos')
+					->rules([
+						fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+							$currency = Currency::latest()->first();
+							$payments = collect($get('payments'));
+							$total_cost = $get('total_cost');
+
+							$total_payed = round($payments->reduce(function ($total, $payment) {
+								if ($payment['type'] === null) return $total;
+
+								$total += in_array($payment['type'], ['bs', 'payment'])
+									? $payment['total_payed'] / $payment['currency']
+									: $payment['total_payed'];
+
+								return $total;
+							}, 0), 2);
+
+							$total_cost_bs = round($total_cost * $currency->value, 2);
+							$diff = round(abs($total_payed - $total_cost), 2);
+							$diff_bs = round($diff * $currency->value, 2);
+
+							if ($total_payed == $total_cost) return false;
+
+							$total_payed > $total_cost
+								? $fail("El monto pagado es mayor al coste total por ({$diff}$) o ({$diff_bs} Bs). Monto válido: ({$total_cost}$) o ({$total_cost_bs} Bs)")
+								: $fail("El monto pagado es menor al coste total por ({$diff}$) o ({$diff_bs} Bs). Monto válido: ({$total_cost}$) o ({$total_cost_bs} Bs)");
+						}
+					])
 					->schema([
 						TextInput::make('total_payed')
 							->label('Monto pagado')
 							->placeholder('Ej: 100')
 							->type('number')
 							->numeric()
-							->live()
 							->step(0.01)
 							->minValue(0.01)
 							->rules([
 								'required',
 								'min:0.01',
 								'max:10000',
-								fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
-									$type = $get('type');
-
-									if (in_array($type, ['bs', 'payment'])) {
-										$total_payed = floatval($get('total_payed'));
-										$currency = $get('currency') ?? Currency::latest()->first()->value;
-										$total_cost = floatval($get('total_cost'));
-										$total_cost_bs = $total_cost * $currency;
-										$total_payed = round($total_payed / $currency, 2);
-
-										if ($total_payed === $total_cost) {
-											return false;
-										}
-
-										$diff = $total_payed > $total_cost
-											? $total_payed - $total_cost
-											: $total_cost - $total_payed;
-										$diff_bs = $diff * $currency;
-
-
-										$total_payed > $total_cost
-											? $fail("El monto pagado es mayor al coste total por ({$diff}$) o ({$diff_bs} Bs). Monto válido: ({$total_cost}$) o ({$total_cost_bs} Bs)")
-											: $fail("El monto pagado es menor al coste total por ({$diff}$) o ({$diff_bs} Bs). Monto válido: ({$total_cost}$) o ({$total_cost_bs} Bs)");
-									}
-								}
 							])
 							->validationMessages([
 								'required' => "Debe indicar un número",
@@ -314,15 +330,13 @@ class SellTicketsAction extends Action
 							->label('Referencia')
 							->type('number')
 							->numeric()
-							->integer()
 							->step(0000)
 							->placeholder('Ej: 0001')
-							->rules(['sometimes', 'min:3', 'max:25', 'regex:/^[a-zA-Z\s]+$/'])
+							->rules(['sometimes', 'digits:4', 'regex:/^[0-9]+$/'])
 							->validationAttribute('nombre')
 							->validationMessages([
-								'regex' => 'Solo se aceptan letras',
-								'min' => 'Debe contener al menos :min caracteres',
-								'max' => 'Debe contener máximo :max caracteres',
+								'regex' => 'Solo se aceptan números',
+								'digits' => 'Debe contener los 4 dígitos'
 							]),
 						Section::make()
 							->schema([
@@ -362,6 +376,8 @@ class SellTicketsAction extends Action
 							])->columns(3)
 							->hidden(fn(Get $get) => !in_array($get('type'), ['payment', 'bs']))
 					])
+					->live()
+					->columns(3)
 					->hidden(function (Lottery $record, Get $get) {
 						$tickets = $get('tickets') ?? [];
 						$tickets_available = count(array_intersect($record->tickets_left(), $tickets));
@@ -392,79 +408,118 @@ class SellTicketsAction extends Action
 			])
 			->modalSubmitAction(fn(Lottery $record) => count($record->tickets_left()) >= 1 ? null : false)
 			->action(function (Lottery $record, array $data) {
+				$currency = Currency::latest()->first()->value;
 				$client = Client::find($data['client_id']);
 				$available_tickets = $record->tickets->where('client_id', null)->pluck('id')->toArray();
 				$selected_tickets = array_intersect($available_tickets, $data['tickets']);
-				$ticket_price = $record->ticket_price();
 
-				$total_payed = $data['total_payed'] ?? 0;
-				$ref = $data['ref'] ?? 0;
-				$type = $data['type'] ?? null;
-				$currency = $data['currency'] ?? 0;
-
-				if (in_array($type, ['bs', 'payment'])) {
-					$ticket_price = round($ticket_price * $currency, 2);
-				}
-
-				$has_payments = $total_payed > 0;
 				$client_name = $client->full_name;
 				$tickets = Ticket::findMany($selected_tickets);
 				$client->tickets()->saveMany($tickets);
-				$selected_tickets = count($selected_tickets);
+				$selected_tickets_count = count($selected_tickets);
 
 				Notification::make()
 					->title('Boletos vendidos')
-					->body(Str::markdown("Se ha vendido **{$selected_tickets}** boletos al cliente **{$client_name}** en la rifa de **{$record->name}**"))
+					->body(Str::markdown("Se ha vendido **{$selected_tickets_count}** boletos al cliente **{$client_name}** en la rifa de **{$record->name}**"))
 					->success()
 					->send();
 
-				if ($has_payments) {
-					$current_total_payed_amount = $total_payed;
-					$currency_id = Currency::latest()->first()->id;
+				if (in_array('payments', $data)) {
+					$ticket_price = $record->ticket_price;
+					$payments = Arr::get($data, 'payments', []);
 
-					$tickets->map(function (Ticket $ticket) use (&$current_total_payed_amount, $ticket_price, $ref, $type, $currency_id): void {
-						if ($current_total_payed_amount >= $ticket_price) {
-							$current_total_payed_amount -= $ticket_price;
+					$total_payed = $payments->reduce(function ($total, $payment) {
+						if ($payment['type'] === null) return $total;
 
-							$ticket->payment()->create([
-								'amount' => $ticket_price,
-								'ref' => $ref,
-								'type' => $type,
-								'currency_id' => $currency_id
-							]);
+						$total += in_array($payment['type'], ['bs', 'payment'])
+							? $payment['total_payed'] / $payment['currency']
+							: $payment['total_payed'];
+
+						return $total;
+					}, 0);
+
+					$has_payments = $total_payed > 0;
+					DB::beginTransaction();
+
+					try {
+						if ($has_payments) {
+							$currency = Currency::latest()->first();
+							$ticket_index = 0;
+							$ticketsArray = $tickets->toArray();
+
+							foreach ($payments as $payment) {
+								if ($payment['type'] === null) continue;
+
+								$payment_amount_original = $payment['total_payed'];
+								$payment_amount_usd = $payment['type'] === 'bs' || $payment['type'] === 'payment'
+									? $payment_amount_original / $currency->value
+									: $payment_amount_original;
+
+								$remaining_payment_usd = $payment_amount_usd;
+
+								while ($remaining_payment_usd > 0 && $ticket_index < count($ticketsArray)) {
+									$ticket = Ticket::find($ticketsArray[$ticket_index]['id']);
+									$ticket_price = $record->ticket_price;
+
+									// ***THE FIX IS HERE***
+									$ticket_payment_total = $ticket->payments()->sum('amount') / $currency->value; // Reset for each ticket.  Convert to USD for comparison
+
+									$amount_to_apply_usd = min($remaining_payment_usd, $ticket_price - $ticket_payment_total);
+									$amount_to_apply_original = ($payment['type'] === 'bs' || $payment['type'] === 'payment')
+										? $amount_to_apply_usd * $currency->value
+										: $amount_to_apply_usd;
+
+									if ($amount_to_apply_original > 0) {
+										$ticket->payments()->create([
+											'amount' => $amount_to_apply_original,
+											'ref' => $payment['ref'] ?? '',
+											'type' => $payment['type'],
+											'currency_id' => $currency->id,
+										]);
+
+										$remaining_payment_usd -= $amount_to_apply_usd;
+									}
+
+									if ($ticket_price <= $ticket_payment_total + $amount_to_apply_usd) {
+										$ticket_index++;
+									}
+								}
+							}
+							DB::commit();
+
+							Notification::make()
+								->title('Pagos registrados')
+								->body(Str::markdown("Se ha registrado el pago de **{$selected_tickets_count}** boletos bajo el monto de **{$total_payed} $ en total**"))
+								->success()
+								->send();
+						} else {
+							$total_cost = $ticket_price * $selected_tickets_count;
+							Notification::make()
+								->title('Pagos pendientes')
+								->body(Str::markdown("Se ha registrado **{$selected_tickets_count}** boletos **pendientes por pagar** equivalentes a ({$total_cost}$)"))
+								->warning()
+								->send();
 						}
-					});
+					} catch (\Exception $e) {
+						DB::rollBack();
 
-					$payment_types = [
-						'usd' => 'dólares efectivo',
-						'bs' => 'bolìvares efectivo',
-						'payment' => 'pago mòvil',
-						'other' => 'otros'
-					];
+						$logFilePath = public_path('logs/error_log.txt');
 
-					Notification::make()
-						->title('Pagos registrados')
-						->body(Str::markdown("Se ha registrado el pago de **{$selected_tickets}** boletos bajo el monto de **{$total_payed} {$payment_types[$type]}**"))
-						->success()
-						->send();
-				} else {
-					$total_cost = $ticket_price * $selected_tickets;
-					Notification::make()
-						->title('Pagos pendientes')
-						->body(Str::markdown("Se ha registrado **{$selected_tickets}** boletos **pendientes por pagar** equivalentes a ({$total_cost}$)"))
-						->warning()
-						->send();
+						if (!File::exists(public_path('logs'))) {
+							File::makeDirectory(public_path('logs'), 0755, true);
+						}
+						File::append($logFilePath, now() . ' - ' . "[TicketPaymentAction]" . ' ' . $e->getMessage() . PHP_EOL);
+					}
+
+					HasActivityLogger::logActivity($record, 'sell_tickets', 'create', [
+						'tickets' => $selected_tickets_count,
+						'ticket_price' => $ticket_price,
+						'total_payed' => $total_payed,
+						'payments' => $payments,
+						'currency' => $currency,
+						'client' => $client->toArray()
+					]);
 				}
-
-				HasActivityLogger::logActivity($record, 'sell_tickets', 'create', [
-					'tickets' => $selected_tickets,
-					'ticket_price' => $ticket_price,
-					'total_payed' => $total_payed,
-					'ref' => $ref,
-					'type' => $type,
-					'currency' => $currency,
-					'client' => $client->toArray()
-				]);
 			});
 	}
 }

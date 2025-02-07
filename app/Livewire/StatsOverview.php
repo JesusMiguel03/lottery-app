@@ -14,19 +14,19 @@ class StatsOverview extends BaseWidget
     {
         $total_clients = Client::count();
         $total_tickets = Ticket::where('active', 1)->count();
-        $total_payments = Payment::with('currency')->get()->reduce(function ($carry, $payment) {
+        $total_payments = round(Payment::with('currency')->get()->reduce(function ($carry, $payment) {
             if ($payment->type === 'bs' || $payment->type === 'payment') {
                 return $carry + ($payment->amount / $payment->currency->value);
             }
             return $carry + $payment->amount;
-        }, 0);
+        }, 0), 2);
 
-        $monthly_payments = Payment::with('currency')->whereMonth('created_at', now()->month)->get()->reduce(function ($carry, $payment) {
+        $monthly_payments = round(Payment::with('currency')->whereMonth('created_at', now()->month)->get()->reduce(function ($carry, $payment) {
             if ($payment->type === 'bs' || $payment->type === 'payment') {
                 return $carry + ($payment->amount / $payment->currency->value);
             }
             return $carry + $payment->amount;
-        }, 0);
+        }, 0), 2);
         $montly_tickets = round(Ticket::whereMonth('created_at', '=', now()->month)->count(), 2);
 
         return [

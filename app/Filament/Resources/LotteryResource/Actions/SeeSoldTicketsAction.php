@@ -30,16 +30,18 @@ class SeeSoldTicketsAction extends Action
               ->select('number', 'id', 'client_id')
               ->get();
 
-            $formatted_tickets = $tickets->mapWithKeys(function ($ticket) {
+            $formatted_tickets = $tickets->mapWithKeys(function ($ticket) use ($record) {
               $client_name = $ticket->client->full_name;
-              $payed = $ticket->payment?->amount ?? 0;
-              $currency_icon = in_array($ticket->payment?->type, ['bs', 'payment'])
-                ? 'Bs'
-                : '$';
+              $payment = $ticket->total_payed === 0
+                ? 'Pendiente'
+                : (
+                  $ticket->total_payed === $record->ticket_price
+                  ? "{$ticket->total_payed} $"
+                  : "{$ticket->total_payed} $ / {$record->ticket_price} $"
+                );
 
-              $payment = "({$payed} {$currency_icon})";
               return [
-                $ticket->id => "{$ticket->number} - {$client_name} {$payment}"
+                $ticket->id => "{$ticket->number} - {$client_name} ({$payment})"
               ];
             })->toArray();
 

@@ -118,8 +118,8 @@ class RaffleAction extends Action
             return "Número ganador: #" . $custom_index++;
           })
           ->addActionLabel('Agregar ganador')
-          ->defaultItems(fn(Lottery $record) => $record->get_payed_tickets()->count())
-          ->maxItems(fn(Lottery $record) => $record->get_payed_tickets()->count())
+          ->defaultItems(fn(Lottery $record) => $record->total_winners)
+          ->maxItems(fn(Lottery $record) => $record->total_winners)
           ->reorderable(false)
           ->deletable(false)
           ->columnSpanFull()
@@ -148,13 +148,15 @@ class RaffleAction extends Action
           return;
         }
 
+        $prizes = $record->prizes;
         Ticket::with('client')
           ->findMany($flat_data)
-          ->map(function ($ticket, $index) use ($record) {
+          ->map(function ($ticket, $index) use ($record, $prizes) {
             $current_index = ++$index;
             $ticket->update([
               'winner' => true,
-              'order' => $current_index
+              'order' => $current_index,
+              'prize_id' => $prizes[$index - 1]->id
             ]);
 
             Notification::make()

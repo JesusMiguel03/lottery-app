@@ -151,7 +151,7 @@ class Client extends Model
                 ->whereDoesntHave("payment")
                 ->get()
                 ->map(function ($ticket) {
-                    return $ticket->lottery->ticket_price();
+                    return $ticket->lottery->ticket_price;
                 })
                 ->toArray()
         );

@@ -18,6 +18,7 @@ return new class extends Migration
             $table->integer('total_winners');
             $table->integer('total_tickets');
             $table->float('total_price');
+            $table->float('ticket_price');
             $table->dateTime('finished_at')
                 ->nullable();
             $table->date('initial_date');

@@ -58,7 +58,8 @@ class NotifyWinnerClientsAction extends Action
   private function actionHandler($lotteryId, $lotteryName)
   {
     $winners = $this->fetchWinners($lotteryId);
-    $losers = $this->fetchLosers($lotteryId);
+    $winnerIds = collect($winners)->pluck('id')->toArray();
+    $losers = $this->fetchLosers($lotteryId, $winnerIds);
 
     if (count($winners) > 0 || count($losers) > 0) {
       $data = $this->prepareMessages($winners, $losers);
@@ -74,7 +75,7 @@ class NotifyWinnerClientsAction extends Action
   private function fetchWinners($lottery_id)
   {
     return Client::whereHas('tickets', function ($query) use ($lottery_id) {
-      $query->whereHas('payment')
+      $query->whereHas('payments')
         ->where('winner', true)
         ->where('active', true)
         ->whereHas('lottery', fn($q) => $q->where('id', $lottery_id));
@@ -82,7 +83,7 @@ class NotifyWinnerClientsAction extends Action
       ->with(['tickets' => function ($query) use ($lottery_id) {
         $query->where('winner', true)
           ->where('lottery_id', $lottery_id)
-          ->with(['lottery' => fn($q) => $q->select(['id', DB::raw('name as lottery_name')])]);
+          ->with('prize');
       }])
       ->select([
         DB::raw("name || ' ' || last_name as client_name"),
@@ -96,7 +97,8 @@ class NotifyWinnerClientsAction extends Action
         foreach ($client['tickets'] as $ticket) {
           $tickets[] = [
             'number' => $ticket['number'],
-            'id' => $ticket['id']
+            'id' => $ticket['id'],
+            'prize' => $ticket->prize ? "#{$ticket['order']} *{$ticket->prize->name}* x{$ticket->prize->quantity}" : null
           ];
         }
         return [
@@ -108,14 +110,15 @@ class NotifyWinnerClientsAction extends Action
       });
   }
 
-  private function fetchLosers($lottery_id)
+  private function fetchLosers($lottery_id, $winnerIds)
   {
     return Client::whereHas('tickets', function ($query) use ($lottery_id) {
-      $query->whereHas('payment')
+      $query->whereHas('payments')
         ->where('winner', false)
         ->where('active', true)
         ->whereHas('lottery', fn($q) => $q->where('id', $lottery_id));
     })
+      ->whereNotIn('id', $winnerIds)
       ->select([
         DB::raw("name || ' ' || last_name as client_name"),
         DB::raw("code || '' || phone as client_phone"),
@@ -140,7 +143,15 @@ class NotifyWinnerClientsAction extends Action
     foreach ($winners as $client) {
       $chatId = substr($client['client_phone'], 1);
       $tickets = $client['tickets'];
-      $formatted_tickets = array_map(fn($ticket) => "- *{$ticket['number']}*", $tickets);
+      $formatted_tickets = [];
+      foreach ($tickets as $ticket) {
+        $prizeInfo = "";
+        if ($ticket['prize']) {
+          $prizeInfo = " (Premio: {$ticket['prize']})";
+        }
+        $formatted_tickets[] = "- *{$ticket['number']}* {$prizeInfo}";
+      }
+
       $ticket_numbers = implode("\n", $formatted_tickets);
       $message = str_replace(
         ['SALUTE', 'CLIENT_NAME', 'APP_NAME', 'LOTTERY_NAME', 'TICKETS'],

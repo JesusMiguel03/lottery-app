@@ -8,6 +8,7 @@ use Filament\Tables\Actions\Action;
 use App\Models\Lottery;
 use App\Models\Ticket;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -23,11 +24,11 @@ class NotifyDebtorClientsAction extends Action
     $this->label("Notificar a deudores")
       ->icon('heroicon-o-chat-bubble-left')
       ->hidden(
-        fn(Lottery $record) =>
-        $record->tickets()->whereHas('client')->whereDoesntHave('payment')->count() === 0 || (now()->format('d/m/Y') > $record->final_date)
+        fn(Lottery $record) => $record->tickets()->whereHas('client')->whereDoesntHave('payments')->count() === 0 || (now()->format('d/m/Y') > $record->final_date)
       )
       ->action(function (Lottery $record) {
         $this->actionHandler($record->id, $record->name);
+
 
         HasActivityLogger::logActivity(null, 'notify_debtors', 'notification');
 
@@ -57,6 +58,7 @@ class NotifyDebtorClientsAction extends Action
         }
       });
   }
+
   private function actionHandler($lotteryId, $lotteryName)
   {
     $clients = $this->fetchDebtors($lotteryId);
@@ -73,28 +75,53 @@ class NotifyDebtorClientsAction extends Action
     }
   }
 
+
   private function fetchDebtors($lottery_id)
   {
-    $ticketPrice = Lottery::find($lottery_id)->ticket_price();
+    $ticketPrice = Lottery::find($lottery_id)->ticket_price;
 
-    return Client::whereHas(
-      'tickets',
-      fn($query) =>
-      $query->pendingPayment()
-        ->where('lottery_id', $lottery_id)
-    )
-      ->with(['tickets' => fn($query) => $query->pendingPayment()->with('lottery')])
+    return Client::whereHas('tickets', function ($query) use ($lottery_id) {
+      $query->where('lottery_id', $lottery_id);
+    })
+      ->with(['tickets' => function ($query) use ($lottery_id) {
+        $query->where('lottery_id', $lottery_id)
+          ->with('lottery', 'payments')
+          ->selectRaw("tickets.*, COALESCE(SUM(CASE 
+                    WHEN payments.type IN ('bs', 'payment') THEN payments.amount / (SELECT value FROM currencies WHERE id = payments.currency_id) 
+                    ELSE payments.amount 
+                    END), 0) as total_paid")
+          ->leftJoin('payments', 'tickets.id', '=', 'payments.ticket_id')
+          ->leftJoin('currencies', 'payments.currency_id', '=', 'currencies.id')
+          ->groupBy('tickets.id', 'tickets.number', 'tickets.lottery_id', 'tickets.client_id')
+          ->havingRaw("(COALESCE(total_paid, 0) = 0 OR COALESCE(total_paid, 0) < (SELECT ticket_price FROM lotteries WHERE id = tickets.lottery_id))"); // Corrected having clause
+      }])
+      ->select([
+        DB::raw("name || ' ' || last_name as client_name"),
+        DB::raw("code || '' || phone as client_phone"),
+        '*'
+      ])
       ->get()
       ->map(function ($client) use ($ticketPrice) {
+        $unpaidTickets = $client->tickets; // All tickets match the criteria
+
+        $totalDebt = $unpaidTickets->sum(function ($ticket) use ($ticketPrice) {
+          return  $ticketPrice - $ticket->total_paid; // Calculate debt for each ticket
+        });
+
         return [
-          'client_name' => $client->full_name,
-          'phone' => str_replace('-', '', substr($client->phone_number, 1)),
-          'tickets' => $client->tickets->map(fn($ticket) => [
-            'id' => $ticket->id,
-            'number' => $ticket->number,
-            'price' => $ticketPrice,
-            'lottery_name' => $ticket->lottery->name
-          ])
+          'client_name' => $client['client_name'],
+          'client_phone' => $client['client_phone'],
+          'tickets' => $unpaidTickets->map(function ($ticket) use ($ticketPrice) {
+            $debt = $ticketPrice - $ticket->total_paid;
+            return [
+              'id' => $ticket->id,
+              'number' => $ticket->number,
+              'price' => $ticketPrice,
+              'lottery_name' => $ticket->lottery->name,
+              'debt' => $debt > 0 ? $debt : 0
+            ];
+          }),
+          'total_debt' => $totalDebt > 0 ? $totalDebt : 0,
         ];
       });
   }
@@ -103,38 +130,36 @@ class NotifyDebtorClientsAction extends Action
   {
     $salute = $this->getGreeting();
     $appName = config('app.name');
+    $debtor_message = config('messages.debtor');
 
     $data = [];
 
     foreach ($clients as $client) {
-      $messageData = $this->prepareMessageData($client, $salute, $appName);
+      $chatId = $client['client_phone'];
+      $tickets = $client['tickets'];
+      $formatted_tickets = [];
+      $totalDebt = 0;
+
+      foreach ($tickets as $ticket) {
+        $debt = $ticket['debt'];
+        $formatted_tickets[] = "- *{$ticket['number']}* (Rifa: {$ticket['lottery_name']}, Deuda: {$debt} $)";
+        $totalDebt += $debt;
+      }
+
+      $ticket_numbers = implode("\n", $formatted_tickets);
+      $message = str_replace(
+        ['SALUTE', 'CLIENT_NAME', 'APP_NAME', 'TOTAL_TICKETS', 'TICKETS', 'TOTAL_DEBT'],
+        [$salute, $client['client_name'], $appName, count($tickets), $ticket_numbers, $totalDebt],
+        $debtor_message
+      );
+
       $data[] = [
-        'message' => $messageData['message'],
-        'chatId' => $messageData['chatId']
+        'message' => $message,
+        'chatId' => substr($chatId, 1)
       ];
     }
 
     return $data;
-  }
-
-  private function prepareMessageData($client, $salute, $appName)
-  {
-    $ticketDetails = collect($client['tickets'])->map(
-      fn($ticket) => "Rifa: {$ticket['lottery_name']}, boleto: {$ticket['number']}"
-    )->implode(', ');
-
-    $totalDebt = collect($client['tickets'])->sum('price');
-    $totalTickets = count($client['tickets']);
-
-    $message = "{$salute} *{$client['client_name']}*, reciba un cordial saludo de parte de _{$appName}_, "
-      . "nos comunicamos con usted para notificarle que debe un total de: *{$totalTickets} boletos*, "
-      . "por un valor total de: *{$totalDebt} $*. Por favor póngase en contacto para realizar el pago "
-      . "de los boletos pendientes ({$ticketDetails}) o cancelar los mismos. Que tenga un feliz día.";
-
-    return [
-      'chatId' => $client['phone'],
-      'message' => $message
-    ];
   }
 
   private function saveClientsDataToFile($data)

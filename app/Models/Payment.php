@@ -28,7 +28,7 @@ class Payment extends Model
     {
         $type = $this->type;
         return $type === 'bs' || $type === 'payment'
-            ? $this->amount / $this->currency->amount
+            ? $this->amount / $this->currency->value
             : $this->amount;
     }
 
@@ -42,5 +42,31 @@ class Payment extends Model
         ];
 
         return "{$types[$this->type]}";
+    }
+
+    public function getPaymentFormattedAttribute()
+    {
+        $paymentTypes = [
+            'usd' => '$',
+            'other' => '$',
+            'payment' => 'Bs',
+            'bs' => 'Bs'
+        ];
+
+        return "{$this->amount} {$paymentTypes[$this->type]}";
+    }
+
+    public function getPaymentFormattedWithRefAttribute()
+    {
+        $paymentTypes = [
+            'usd' => '$',
+            'other' => '$',
+            'payment' => 'Bs',
+            'bs' => 'Bs'
+        ];
+
+        $ref = $this->ref ? ", Ref: {$this->ref}" : '';
+
+        return "{$this->amount} {$paymentTypes[$this->type]}{$ref}";
     }
 }

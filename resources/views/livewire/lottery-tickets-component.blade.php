@@ -16,20 +16,42 @@
                     <p>Disponible</p>
                 </div>
             </li>
+            <li>
+                <div class="flex items-center gap-8">
+                    <div style="background-color: rgb(233, 230, 81)" class="w-8 h-8 border border-gray-700 rounded-md">
+                    </div>
+                    <p>Pendiente</p>
+                </div>
+            </li>
+            <li>
+                <div class="flex items-center gap-8">
+                    <div style="background-color: rgb(167, 130, 133)" class="w-8 h-8 border border-gray-700 rounded-md">
+                    </div>
+                    <p>Pago incompleto</p>
+                </div>
+            </li>
         </ul>
     </section>
 
-    <section class="flex gap-3">
+    <section class="grid-container">
+        @php
+            $colors = [
+                'not_payed' => 'rgb(167, 130, 133)',
+                'success' => 'rgb(248, 174, 174)',
+                'pending' => 'rgb(233, 230, 81)',
+                'danger' => 'rgb(174, 248, 174)',
+            ];
+        @endphp
         @foreach ($tickets as $ticket)
             <div wire:click="selectTicket({{ $ticket['id'] }})"
-                style="background-color: {{ $ticket['color'] === 'success' ? 'rgba(248, 174, 174)' : 'rgba(174, 248, 174)' }};"
+                style="background-color: {{ $colors[$ticket['color']] }};"
                 class="w-8 h-8 border border-gray-700 rounded-md inline-flex justify-center items-center text-sm cursor-pointer">
                 {{ $ticket['number'] }}
             </div>
         @endforeach
     </section>
 
-    <x-filament::modal wire:model="selectedTicket" id="ticketModal" width="md">
+    <x-filament::modal wire:model="selectedTicket" id="ticketModal" width="lg">
         <x-slot name="heading">
             Detalles del boleto {{ $ticketNumber }}
         </x-slot>
@@ -50,22 +72,17 @@
             @if ($ticketPayment)
                 <li>
                     <div class="flex justify-between">
-                        <p class="font-bold">Monto pagado:</p>
-                        <p>{{ $ticketPaymentAmount }}</p>
+                        <p class="font-bold">Pagos:</p>
                     </div>
                 </li>
-                <li>
-                    <div class="flex justify-between">
-                        <p class="font-bold">Tipo de pago:</p>
-                        <p>{{ $ticketPaymentType }}</p>
-                    </div>
-                </li>
-                <li>
-                    <div class="flex justify-between">
-                        <p class="font-bold">Ref:</p>
-                        <p>{{ $ticketPaymentRef }}</p>
-                    </div>
-                </li>
+                @foreach ($ticketPayment as $key => $payment)
+                    <li>
+                        <p class="ps-4">
+                            ~ {{ ++$key }}. {{ $payment->payment_formatted_with_ref }}
+                            {{ $payment->created_at->translatedFormat('l, d M Y, h:i a') }}
+                        </p>
+                    </li>
+                @endforeach
             @endif
             <li>
                 <div class="flex justify-between">

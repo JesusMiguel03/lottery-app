@@ -32,6 +32,7 @@ use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
+use Filament\Support\Colors\Color;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\EditAction;
@@ -40,6 +41,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Arr;
 
 class LotteryResource extends Resource
 {
@@ -109,10 +111,11 @@ class LotteryResource extends Resource
                         'lt' => 'Debe ser menor al total de boletos'
                     ])
                     ->helperText('Coloque un número desde 1 hasta 100, si el número es mayor a 100 automáticamente se colocará el máximo de ganadores')
-                    ->afterStateUpdated(function (Get $get, Set $set) {
+                    ->afterStateUpdated(function (Get $get, Set $set, $state) {
                         $value = $get('total_winners');
                         $max = 100;
                         $set('total_winners', $value > $max ? $max : $value);
+                        $set('prizes', array_fill(0, $state, []));
                     })
                     ->hiddenOn('edit'),
                 TextInput::make('total_tickets')
@@ -142,11 +145,13 @@ class LotteryResource extends Resource
                         $total_tickets = $get('total_tickets');
                         $value = empty($get('total_price')) ? 0 : $get('total_price');
                         $calc = $value / $total_tickets;
-                        $set('ticket_value', $value > 0 ? $calc : 0);
+                        $set('ticket_price', $value > 0 ? $calc : 0);
                     })
                     ->hiddenOn('edit'),
                 Repeater::make('prizes')
                     ->label('Premios')
+                    ->live()
+                    ->reactive()
                     ->schema([
                         Fieldset::make('Premio')
                             ->columns(3)
@@ -196,63 +201,68 @@ class LotteryResource extends Resource
                     ])
                     ->columnSpanFull()
                     ->hidden(fn(Get $get) => empty($get('total_winners')))
-                    ->maxItems(fn(Get $get) => $get('total_winners') ?? 0),
+                    ->maxItems(fn(Get $get) => $get('total_winners') ?? 0)
+                    ->minItems(fn(Get $get) => $get('total_winners') ?? 0),
                 Placeholder::make('prize_notes')
                     ->label('Notas')
                     ->content('Los premios se asignarán en el órden en que fueron definidos')
                     ->hidden(fn(Get $get) => empty($get('total_winners')))
                     ->columnSpanFull(),
-                TextInput::make('total_price')
-                    ->label('Precio total')
-                    ->placeholder('Ej: 100$')
-                    ->type('number')
-                    ->numeric()
-                    ->integer()
-                    ->step(0.01)
-                    ->rules('required')
-                    ->markAsRequired()
-                    ->minValue(0.01)
-                    ->validationMessages([
-                        'required' => "Debe indicar un número",
-                        'min' => "Debe ser al menos :min",
-                        'max' => "Debe ser máximo :max",
+                Fieldset::make('prizes')
+                    ->label('Precios')
+                    ->schema([
+                        TextInput::make('total_price')
+                            ->label('Precio total')
+                            ->placeholder('Ej: 100$')
+                            ->type('number')
+                            ->numeric()
+                            ->integer()
+                            ->step(0.01)
+                            ->rules('required')
+                            ->markAsRequired()
+                            ->minValue(0.01)
+                            ->validationMessages([
+                                'required' => "Debe indicar un número",
+                                'min' => "Debe ser al menos :min",
+                                'max' => "Debe ser máximo :max",
+                            ])
+                            ->live()
+                            ->helperText('Indique el precio total de la rifa (este precio se dividirá entre el total de boletos)')
+                            ->afterStateUpdated(function (Get $get, Set $set) {
+                                $total_tickets = $get('total_tickets');
+                                if (empty($total_tickets)) {
+                                    $set('total_tickets', 1);
+                                    $total_tickets = 1;
+                                }
+
+                                $value = empty($get('total_price')) ? 0 : $get('total_price');
+                                $calc = $value / $total_tickets;
+
+                                $currency = Currency::latest()->first();
+                                if ($currency == null) {
+                                    redirect(route('filament.admin.resources.clients.create'));
+                                }
+
+                                $set('ticket_price', $value > 0 ? $calc : 0);
+                                $set('none', $value > 0 ? round($calc * $currency->value, 2) : 0);
+                            })
+                            ->hiddenOn('edit'),
+                        TextInput::make('ticket_price')
+                            ->label('Precio por boleto')
+                            ->readOnly()
+                            ->suffix('$')
+                            ->placeholder('Ej: 100')
+                            ->helperText('Este campo mostrará que valor tendrá cada boleto')
+                            ->hiddenOn('edit'),
+                        TextInput::make('none')
+                            ->label('Precio por boleto')
+                            ->disabled()
+                            ->suffix('Bs')
+                            ->placeholder('Ej: 100')
+                            ->helperText('Este campo mostrará que valor tendrá cada boleto usando la tasa de hoy')
+                            ->hiddenOn('edit'),
                     ])
-                    ->live()
-                    ->helperText('Indique el precio total de la rifa (este precio se dividirá entre el total de boletos)')
-                    ->afterStateUpdated(function (Get $get, Set $set) {
-                        $total_tickets = $get('total_tickets');
-                        if (empty($total_tickets)) {
-                            $set('total_tickets', 1);
-                            $total_tickets = 1;
-                        }
-
-                        $value = empty($get('total_price')) ? 0 : $get('total_price');
-                        $calc = $value / $total_tickets;
-
-                        $currency = Currency::latest()->first();
-                        if ($currency == null) {
-                            redirect(route('filament.admin.resources.clients.create'));
-                        }
-
-                        $set('ticket_value', $value > 0 ? $calc : 0);
-                        $set('none', $value > 0 ? round($calc * $currency->value, 2) : 0);
-                    })
-                    ->columnSpanFull()
-                    ->hiddenOn('edit'),
-                TextInput::make('ticket_value')
-                    ->label('Precio por boleto')
-                    ->disabled()
-                    ->suffix('$')
-                    ->placeholder('Ej: 100')
-                    ->helperText('Este campo mostrará que valor tendrá cada boleto')
-                    ->hiddenOn('edit'),
-                TextInput::make('none')
-                    ->label('Precio por boleto')
-                    ->disabled()
-                    ->suffix('Bs')
-                    ->placeholder('Ej: 100')
-                    ->helperText('Este campo mostrará que valor tendrá cada boleto usando la tasa de hoy')
-                    ->hiddenOn('edit'),
+                    ->columns(3),
                 Fieldset::make('Duración')
                     ->schema([
                         DatePicker::make('initial_date')
@@ -323,20 +333,41 @@ class LotteryResource extends Resource
                     ->toggleable(),
                 TextColumn::make('total_tickets')
                     ->label('Boletos')
+                    ->formatStateUsing(
+                        fn(Lottery $record) => "{$record->tickets_occuped} / {$record->total_tickets}"
+                    )
+                    ->searchable()
+                    ->toggleable(),
+                TextColumn::make('ticket_price')
+                    ->label('Precio boleto')
+                    ->suffix(' $')
                     ->searchable()
                     ->toggleable(),
                 TextColumn::make('total_price')
-                    ->label('Precio total')
-                    ->suffix('$')
+                    ->label('Precio')
+                    ->formatStateUsing(
+                        fn(Lottery $record) => "{$record->total_payed}$ / {$record->total_price}$"
+                    )
                     ->searchable()
-                    ->toggleable(),
-                TextColumn::make('total_payed')
-                    ->label('Total pagado')
-                    ->suffix('$')
                     ->toggleable(),
                 TextColumn::make('total_prizes_value')
                     ->label('Valor en premios')
                     ->suffix('$')
+                    ->toggleable(),
+                TextColumn::make('lottery_date')
+                    ->label('Fecha de sorteo')
+                    ->toggleable(),
+                TextColumn::make('initial_date')
+                    ->label('Fecha de inicio')
+                    ->formatStateUsing(
+                        fn($state) => Carbon::createFromFormat('d/m/Y', $state)->translatedFormat('l, d M Y')
+                    )
+                    ->toggleable(),
+                TextColumn::make('final_date')
+                    ->formatStateUsing(
+                        fn($state) => Carbon::createFromFormat('d/m/Y', $state)->translatedFormat('l, d M Y')
+                    )
+                    ->label('Fecha fin')
                     ->toggleable(),
                 TextColumn::make('date_range')
                     ->label('Duración')
@@ -437,14 +468,13 @@ class LotteryResource extends Resource
                 TextEntry::make('name')
                     ->label('Nombre'),
                 TextEntry::make('total_price')
-                    ->label('Precio total')
-                    ->suffix(' $')
+                    ->label('Precio')
+                    ->formatStateUsing(
+                        fn(Lottery $record) => "{$record->total_payed}$ / {$record->total_price}$"
+                    )
             ]),
             Split::make([
                 Split::make([
-                    TextEntry::make(name: 'total_payed')
-                        ->label('Total pagado')
-                        ->suffix(' $'),
                     TextEntry::make(name: 'total_prizes_value')
                         ->label('Valor en premios')
                         ->suffix(' $'),
@@ -464,10 +494,21 @@ class LotteryResource extends Resource
                     ->label('Fecha fin')
             ]),
             Split::make([
+                TextEntry::make('lottery_date')
+                    ->label('Fecha del sorteo')
+                    ->badge()
+                    ->color(fn($state) => $state === 'Pendiente' ? Color::Yellow : Color::Green),
+                TextEntry::make('date_range')
+                    ->label('Duración')
+            ]),
+            Split::make([
                 TextEntry::make('total_winners')
                     ->label('Ganadores totales'),
                 TextEntry::make('total_tickets')
-                    ->label('Boletos totales')
+                    ->label('Boletos')
+                    ->formatStateUsing(
+                        fn(Lottery $record) => "{$record->tickets_occuped} / {$record->total_tickets}"
+                    )
             ]),
             Livewire::make(LotteryTicketsComponent::class)
                 ->columnSpanFull()

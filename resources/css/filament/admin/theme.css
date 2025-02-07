@@ -1,3 +1,22 @@
-@import '/vendor/filament/filament/resources/css/theme.css';
+@import "/vendor/filament/filament/resources/css/theme.css";
 
 @config 'tailwind.config.js';
+
+.grid-container {
+    display: grid; /* Make sure your container is a grid */
+    gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+    /* Medium and larger screens */
+    .grid-container {
+        grid-template-columns: repeat(24, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767px) {
+    /* Small screens */
+    .grid-container {
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+}

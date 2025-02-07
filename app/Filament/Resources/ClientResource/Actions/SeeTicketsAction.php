@@ -74,7 +74,7 @@ class SeeTicketsAction extends Action
                       return "<li class='p-4 border border-neutral-400 rounded-md'>
                                         <div class='flex flex-col'>
                                             <h6 class='font-semibold'>Rifa &num;{$ticket->number} {$ticket->lottery->name}</h6>
-                                            <p>Total a pagar: {$ticket->lottery->ticket_price()}$</p>
+                                            <p>Total a pagar: {$ticket->lottery->ticket_price}$</p>
                                         </div>
                                                 </li>";
                     })->implode('')}

@@ -26,7 +26,7 @@ class CancelTicketsAction extends Action
       ->slideOver()
       ->hidden(
         fn(Lottery $record) =>
-        $record->tickets()->whereHas('client')->whereDoesntHave('payment')->count() === 0 || (strtotime(now()->format('Y-m-d')) >
+        $record->tickets()->whereHas('client')->whereDoesntHave('payments')->count() === 0 || (strtotime(now()->format('Y-m-d')) >
           strtotime(Carbon::createFromFormat('d/m/Y', $record->final_date)->format('Y-m-d')))
       )
       ->modalHeading(fn(Lottery $record) => "Cancelar boletos para rifa #{$record->id} ({$record->name})")
@@ -44,7 +44,7 @@ class CancelTicketsAction extends Action
             $tickets = $record->tickets()
               ->with('client')
               ->where('client_id', '!=', null)
-              ->whereDoesntHave('payment')
+              ->whereDoesntHave('payments')
               ->select(['number', 'id', 'client_id', 'alerts'])
               ->get();
 

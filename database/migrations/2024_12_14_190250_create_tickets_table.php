@@ -32,6 +32,7 @@ return new class extends Migration
                 ->constrained()
                 ->cascadeOnDelete()
                 ->cascadeOnUpdate();
+            $table->foreignId('prize_id')->nullable()->constrained('prizes')->nullOnDelete();
             $table->timestamps();
         });
     }

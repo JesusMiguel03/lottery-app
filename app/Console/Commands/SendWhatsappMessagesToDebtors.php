@@ -47,7 +47,7 @@ class SendWhatsappMessagesToDebtors extends Command
 
     private function fetchDebtors($lottery_id)
     {
-        $ticketPrice = Lottery::find($lottery_id)->ticket_price();
+        $ticketPrice = Lottery::find($lottery_id)->ticket_price;
 
         return Client::whereHas(
             'tickets',
