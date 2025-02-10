@@ -6,9 +6,6 @@ use App\Models\Payment;
 use Carbon\Carbon;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Get;
-use Flowframe\Trend\Trend;
-use Flowframe\Trend\TrendValue;
-use Illuminate\Support\Facades\DB;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class MontlyPaymentsChart extends ApexChartWidget
@@ -71,7 +68,7 @@ class MontlyPaymentsChart extends ApexChartWidget
         foreach ($groupedData as $month => $row) {
             $data[] = [
                 'month' => $month,
-                'aggregate' => $row['aggregate'],
+                'aggregate' => round($row['aggregate'], 2),
             ];
         }
 

@@ -28,4 +28,9 @@ class Whatsapp_qr extends Widget
     {
         return '5s'; // Refresh every 5 seconds
     }
+
+    public function getColumnSpan(): array|int|string
+    {
+        return 4;
+    }
 }
