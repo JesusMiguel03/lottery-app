@@ -58,7 +58,7 @@ class Client extends Model
                     ]);
                 },
             ])
-            ->whereDoesntHave("payment")
+            ->whereDoesntHave("payments")
             ->select(["id", "number", "lottery_id"])
             ->get()
             ->toArray();
@@ -137,8 +137,8 @@ class Client extends Model
     public function get_total_payed()
     {
         return $this->tickets()
-            ->has("payment")
-            ->withSum("payment as total_payment_amount", "amount")
+            ->has("payments")
+            ->withSum("payments as total_payment_amount", "amount")
             ->get()
             ->sum("total_payment_amount");
     }
@@ -148,7 +148,7 @@ class Client extends Model
         return array_sum(
             $this->tickets()
                 ->with("lottery")
-                ->whereDoesntHave("payment")
+                ->whereDoesntHave("payments")
                 ->get()
                 ->map(function ($ticket) {
                     return $ticket->lottery->ticket_price;
@@ -179,7 +179,7 @@ class Client extends Model
     {
         return $this->tickets()
             ->with("lottery")
-            ->whereDoesntHave("payment")
+            ->whereDoesntHave("payments")
             ->get();
     }
 
