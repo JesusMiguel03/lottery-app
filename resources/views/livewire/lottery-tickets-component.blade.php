@@ -72,14 +72,29 @@
             @if ($ticketPayment)
                 <li>
                     <div class="flex justify-between">
-                        <p class="font-bold">Pagos:</p>
+                        <p class="font-bold">Pagos ({{ count($ticketPayment) }}):</p>
                     </div>
                 </li>
                 @foreach ($ticketPayment as $key => $payment)
                     <li>
                         <p class="ps-4">
-                            ~ {{ ++$key }}. {{ $payment->payment_formatted_with_ref }}
+                            ~ {{ ++$key . ')' }} {{ $payment->payment_formatted_with_ref }}
                             {{ $payment->created_at->translatedFormat('l, d M Y, h:i a') }}
+                        </p>
+                    </li>
+                @endforeach
+            @endif
+            @if ($ticketChanges)
+                <li>
+                    <div class="flex justify-between">
+                        <p class="font-bold">Vueltos ({{ count($ticketChanges) }}):</p>
+                    </div>
+                </li>
+                @foreach ($ticketChanges as $key => $change)
+                    <li>
+                        <p class="ps-4">
+                            ~ {{ ++$key . ')' }} {{ $change->change_formatted_with_ref }}
+                            {{ $change->created_at->translatedFormat('l, d M Y, h:i a') }}
                         </p>
                     </li>
                 @endforeach

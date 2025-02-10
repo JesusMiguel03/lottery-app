@@ -52,8 +52,9 @@ class Payment extends Model
             'payment' => 'Bs',
             'bs' => 'Bs'
         ];
+        $amount = round($this->amount);
 
-        return "{$this->amount} {$paymentTypes[$this->type]}";
+        return "{$amount} {$paymentTypes[$this->type]}";
     }
 
     public function getPaymentFormattedWithRefAttribute()
@@ -66,7 +67,8 @@ class Payment extends Model
         ];
 
         $ref = $this->ref ? ", Ref: {$this->ref}" : '';
+        $amount = round($this->amount);
 
-        return "{$this->amount} {$paymentTypes[$this->type]}{$ref}";
+        return "{$amount} {$paymentTypes[$this->type]}{$ref}";
     }
 }

@@ -10,7 +10,7 @@ class LotteryTicketsComponent extends Component
 {
     public $record, $tickets, $clients;
     public $selectedTicket = null;
-    public $ticketNumber, $ticketClientName, $ticketPrice, $ticketPayment, $ticketWinner, $ticketWinnerOrder, $ticketNotified;
+    public $ticketNumber, $ticketClientName, $ticketPrice, $ticketPayment, $ticketChanges, $ticketWinner, $ticketWinnerOrder, $ticketNotified;
 
     public function mount(Model $record): void
     {
@@ -21,7 +21,7 @@ class LotteryTicketsComponent extends Component
         $ticket_price = $record->ticket_price;
         $this->tickets = $record->tickets->map(function ($ticket) use (&$clients, $ticket_price) {
             $client = $ticket->client;
-            $color = $ticket->total_payed === 0 ? 'pending' : ($ticket->total_payed !== $ticket_price && $client
+            $color = $ticket->total_payed === 0 ? 'pending' : ($ticket->total_payed - $ticket->total_change !== $ticket_price && $client
                 ? 'not_payed'
                 : ($client ? 'success' : 'danger'));
 
@@ -53,9 +53,10 @@ class LotteryTicketsComponent extends Component
             $this->ticketNumber = $ticket->number;
             $this->ticketClientName = $ticket->client->full_name ?? 'Sin asignar';
             $this->ticketPrice =
-                $ticket->total_payed === $this->record->ticket_price || $ticket->total_payed == 0
+                $ticket->total_payed - $ticket->total_change === $this->record->ticket_price || $ticket->total_payed == 0
                 ? $this->record->ticket_price : "{$ticket->total_payed} $ / {$this->record->ticket_price}";
             $this->ticketPayment = $ticket->payments;
+            $this->ticketChanges = $ticket->changesM;
             $this->ticketWinner = $ticket->winner;
             $this->ticketWinnerOrder = $ticket->order;
             $this->ticketNotified = $ticket->notified_at

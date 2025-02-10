@@ -166,4 +166,9 @@ class Lottery extends Model
     {
         return $this->tickets()->whereNotNull('notified_at')->get();
     }
+
+    public function getRemainingTickets()
+    {
+        return $this->tickets()->whereNull('client_id');
+    }
 }

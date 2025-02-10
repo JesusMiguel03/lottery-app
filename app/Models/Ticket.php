@@ -12,6 +12,7 @@ class Ticket extends Model
         'winner',
         'number',
         'alerts',
+        'change_value',
         'notified_at',
         'client_id',
         'lottery_id',
@@ -28,6 +29,16 @@ class Ticket extends Model
     public function payments()
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function prize()
+    {
+        return $this->belongsTo(Prize::class);
+    }
+
+    public function changesM()
+    {
+        return $this->hasMany(Change::class);
     }
 
     public function lottery()
@@ -50,8 +61,8 @@ class Ticket extends Model
         return round($this->payments->sum('payed_amount'), 2);
     }
 
-    public function prize()
+    public function getTotalChangeAttribute()
     {
-        return $this->belongsTo(Prize::class);
+        return round($this->changesM->sum('payed_amount'), 2);
     }
 }

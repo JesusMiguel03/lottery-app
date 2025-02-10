@@ -24,6 +24,7 @@ return new class extends Migration
                 ->nullable();
             $table->integer('alerts')
                 ->default(0);
+            $table->float('change_value')->nullable();
             $table->foreignId('client_id')
                 ->nullable()
                 ->constrained()

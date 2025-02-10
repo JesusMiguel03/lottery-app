@@ -42,6 +42,7 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
+use Illuminate\Support\HtmlString;
 
 class LotteryResource extends Resource
 {
@@ -307,7 +308,19 @@ class LotteryResource extends Resource
             ->modifyQueryUsing(function (Builder $query) {
                 return $query->with('tickets');
             })
-            ->heading('Nota: Para corroborar que los clientes fueron notificados espere aproximadamente 1 minuto y recargue la página y corrobore en el ícono de campana, si no aparece ninguna notificación puede que deba esperar un poco más de tiempo (varía acorde a la cantidad de clientes y boletos a notificar), puede continuar interactuando con el sistema y visualizar dichas notificaciones en cualquier momento')
+            ->heading(function () {
+                $notification_note = 'Nota: Para corroborar que los clientes fueron notificados espere aproximadamente 1 minuto y recargue la página y corrobore en el ícono de campana, si no aparece ninguna notificación puede que deba esperar un poco más de tiempo (varía acorde a la cantidad de clientes y boletos a notificar), puede continuar interactuando con el sistema y visualizar dichas notificaciones en cualquier momento.';
+                $actions_note = 'Nota 2: Las acciones no estarán disponibles si la fecha actual es mayor a la fecha fin de una rifa.';
+                $perf_note = 'Nota 3: Se recomienda no asignar muchos boletos a la vez, una rifa de 1000 boletos puede tardar en responder al momento de vender los boletos u otros apartados que impliquen el mostrar todos los boletos.';
+
+                return new HtmlString("
+                    <ul class='flex flex-col gap-3'>
+                        <li class='font-bold'>{$notification_note}</li>
+                        <li class='font-bold'>{$actions_note}</li>
+                        <li class='font-bold'>{$perf_note}</li>
+                    </ul>
+                ");
+            })
             ->columns([
                 TextColumn::make('id')
                     ->label('ID')

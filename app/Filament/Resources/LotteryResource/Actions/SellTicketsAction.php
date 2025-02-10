@@ -13,6 +13,7 @@ use App\Models\Lottery;
 use Carbon\Carbon;
 use Closure;
 use Filament\Forms\Components\Fieldset;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
@@ -22,9 +23,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Notifications\Notification;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
@@ -41,6 +40,7 @@ class SellTicketsAction extends Action
 			->slideOver()
 			->hidden(
 				fn(Lottery $record) => (count($record->getWinners()) > 0 ? true : null) ||
+					($record->getRemainingTickets()->count() === 0) ||
 					(empty($record->totalLeft)) ||
 					(strtotime(now()->format('Y-m-d')) >
 						strtotime(Carbon::createFromFormat('d/m/Y', $record->final_date)->format('Y-m-d'))) ? true : null
@@ -160,21 +160,22 @@ class SellTicketsAction extends Action
 							: 'Boletos';
 					})
 					->options(function (Lottery $record) {
-						$tickets = $record->tickets()->with('client')->select('number', 'id', 'client_id')->get();
-						$ticket_price = $record->ticket_price;
+						$tickets = $record->tickets()->with('client')->select('number', 'id', 'client_id', 'ticket_price')->get(); // Select ticket_price here
+						$ticket_price = $record->ticket_price; // Get ticket price once outside the loop
 
 						$formatted_tickets = $tickets->mapWithKeys(function ($ticket) use ($ticket_price) {
-							$ticket_payed = round($ticket->total_payed, 2);
-							$payment = $ticket->total_payed === 0
-								? 'Pendiente'
-								: (
-									$ticket->total_payed === $ticket_price
-									? "{$ticket->total_payed} $"
-									: "{$ticket->total_payed} $ / {$ticket_price} $"
-								);
-							$client_name = empty($ticket->client)
-								? "Disponible {$ticket_price}$"
-								: "{$ticket->client->full_name} ({$payment})";
+							$ticket_payed_rounded = round($ticket->total_payed, 2); // Calculate rounded value once
+							$paymentStatus = '';
+
+							if ($ticket_payed_rounded === 0) {
+								$paymentStatus = 'Pendiente';
+							} elseif ($ticket_payed_rounded === $ticket_price) {
+								$paymentStatus = "{$ticket_payed_rounded} $";
+							} else {
+								$paymentStatus = "{$ticket_payed_rounded} $ / {$ticket_price} $";
+							}
+
+							$client_name = $ticket->client ? "{$ticket->client->full_name} ({$paymentStatus})" : "Disponible {$ticket_price}$";
 
 							return [
 								$ticket->id => "{$ticket->number} - {$client_name}"
@@ -216,11 +217,13 @@ class SellTicketsAction extends Action
 					->live(),
 				Fieldset::make('')
 					->schema([
-						Placeholder::make('total_cost')
+						Hidden::make('total_cost')
+							->default(0),
+						Placeholder::make('total_cost_usd')
 							->label('Monto a pagar')
 							->content(function (Lottery $record, Get $get) {
 								$available_tickets = $record->tickets->where('client_id', null)->pluck('id')->toArray();
-								$selected_tickets = count(array_intersect($available_tickets, $get('tickets')));
+								$selected_tickets = count(value: array_intersect($available_tickets, $get('tickets')));
 
 								if (empty($record->total_price)) {
 									return '0$';
@@ -247,27 +250,37 @@ class SellTicketsAction extends Action
 						fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
 							$currency = Currency::latest()->first();
 							$payments = collect($get('payments'));
+							$changes = collect($get('changes') ?? []);
 							$total_cost = $get('total_cost');
 
 							$total_payed = round($payments->reduce(function ($total, $payment) {
 								if ($payment['type'] === null) return $total;
 
 								$total += in_array($payment['type'], ['bs', 'payment'])
-									? $payment['total_payed'] / $payment['currency']
-									: $payment['total_payed'];
+									? (float) $payment['total_payed'] / $payment['currency']
+									: (float) $payment['total_payed'];
+
+								return $total;
+							}, 0), 2);
+							$total_change = round($changes->reduce(function ($total, $change) {
+								if ($change['type'] === null) return $total;
+
+								$total += in_array($change['type'], ['bs', 'payment'])
+									? (float) $change['total_payed'] / $change['currency']
+									: (float) $change['total_payed'];
 
 								return $total;
 							}, 0), 2);
 
+							$total_cost += $total_change;
 							$total_cost_bs = round($total_cost * $currency->value, 2);
 							$diff = round(abs($total_payed - $total_cost), 2);
 							$diff_bs = round($diff * $currency->value, 2);
 
 							if ($total_payed == $total_cost) return false;
-
-							$total_payed > $total_cost
-								? $fail("El monto pagado es mayor al coste total por ({$diff}$) o ({$diff_bs} Bs). Monto válido: ({$total_cost}$) o ({$total_cost_bs} Bs)")
-								: $fail("El monto pagado es menor al coste total por ({$diff}$) o ({$diff_bs} Bs). Monto válido: ({$total_cost}$) o ({$total_cost_bs} Bs)");
+							if ($total_payed > $total_cost) {
+								return $fail("El monto pagado es mayor al coste total por ({$diff}$) o ({$diff_bs} Bs). Monto válido: ({$total_cost}$) o ({$total_cost_bs} Bs)");
+							}
 						}
 					])
 					->schema([
@@ -377,6 +390,40 @@ class SellTicketsAction extends Action
 							->hidden(fn(Get $get) => !in_array($get('type'), ['payment', 'bs']))
 					])
 					->live()
+					->afterStateUpdated(function (Get $get, Set $set) {
+						$payments = collect($get('payments') ?? []);
+						$changes = collect($get('changes') ?? []);
+						$total_cost = $get('total_cost');
+
+						$total_change = round(
+							$changes->reduce(function ($total, $change) {
+								if ($change['type'] === null) return $total;
+
+								$total += in_array($change['type'], ['bs', 'payment'])
+									? (float) $change['total_payed'] / $change['currency']
+									: (float) $change['total_payed'];
+
+								return $total;
+							}, 0),
+							2
+						);
+						$total_payed = round(
+							$payments->reduce(function ($total, $payment) {
+								if ($payment['type'] === null) return $total;
+
+								$total += in_array($payment['type'], ['bs', 'payment'])
+									? (float) $payment['total_payed'] / $payment['currency']
+									: (float) $payment['total_payed'];
+
+								return $total;
+							}, 0),
+							2
+						);
+
+						$rest = $total_cost - $total_payed + $total_change;
+						$rest = abs($rest);
+						$set('total_change', $rest);
+					})
 					->columns(3)
 					->hidden(function (Lottery $record, Get $get) {
 						$tickets = $get('tickets') ?? [];
@@ -384,6 +431,244 @@ class SellTicketsAction extends Action
 
 						return $tickets_available === 0 || empty($get('add_payment'));
 					}),
+				Repeater::make('changes')
+					->label('Cambios')
+					->live()
+					->hidden(function (Get $get) {
+						$payments = collect($get('payments') ?? []);
+						$changes = collect($get('changes') ?? []);
+						$total_cost = $get('total_cost_usd');
+
+						$total_change = round(
+							$changes->reduce(function ($total, $change) {
+								if (!is_array($change)) { // Check if $change is an array
+									return $total; // Skip if not an array
+								}
+								if (!isset($change['type'])) { // Check if 'type' key exists
+									return $total; // Skip if 'type' key is missing
+								}
+
+								if ($change['type'] === null) return $total;
+
+								$total += in_array($change['type'], ['bs', 'payment'])
+									? $change['total_payed'] / $change['currency']
+									: $change['total_payed'];
+
+								return $total;
+							}, 0),
+							2
+						);
+						$total_payed = round(
+							$payments->reduce(function ($total, $payment) {
+								if ($payment['type'] === null) return $total;
+
+								$total += in_array($payment['type'], ['bs', 'payment'])
+									? (float) $payment['total_payed'] / $payment['currency']
+									: (float) $payment['total_payed'];
+
+								return $total;
+							}, 0),
+							2
+						);
+
+						return $total_payed == $total_cost && $total_change == 0;
+					})
+					->afterStateUpdated(function (Get $get, Set $set) {
+						$payments = collect($get('payments') ?? []);
+						$changes = collect($get('changes') ?? []);
+						$total_cost = $get('total_cost');
+
+						$total_change = round(
+							$changes->reduce(function ($total, $change) {
+								if ($change['type'] === null) return $total;
+
+								$total += in_array($change['type'], ['bs', 'payment'])
+									? (float) $change['total_payed'] / $change['currency']
+									: (float) $change['total_payed'];
+
+								return $total;
+							}, 0),
+							2
+						);
+						$total_payed = round(
+							$payments->reduce(function ($total, $payment) {
+								if ($payment['type'] === null) return $total;
+
+								$total += in_array($payment['type'], ['bs', 'payment'])
+									? (float) $payment['total_payed'] / $payment['currency']
+									: (float) $payment['total_payed'];
+
+								return $total;
+							}, 0),
+							2
+						);
+
+						$rest = $total_cost - $total_payed + $total_change;
+						$rest = abs($rest);
+						$set('total_change', $rest);
+					})
+					->columns(3)
+					->maxItems(
+						fn(Get $get) =>
+						$get('total_change') > 0
+							? count($get('payments') ?? [])
+							: null
+					)
+					->schema([
+						TextInput::make('total_payed')
+							->label('Monto pagado')
+							->placeholder('Ej: 100')
+							->type('number')
+							->numeric()
+							->step(0.01)
+							->minValue(0.01)
+							->rules([
+								'required',
+								'min:0.01',
+								'max:10000',
+							])
+							->validationMessages([
+								'required' => "Debe indicar un número",
+								'min' => "Debe ser al menos :min",
+								'max' => "Debe ser máximo :max",
+							])
+							->live()
+							->afterStateUpdated(function (Get $get, Set $set) {
+								$type = $get('type');
+
+								if (in_array($type, ['bs', 'payment'])) {
+									$total_payed = floatval($get('total_payed'));
+									$currency = $get('currency');
+									$total_cost = $get('total_cost');
+									$set('equivalent', round($total_payed / $currency, 2));
+									$set('equivalent_bs', round($total_cost * $currency, 2));
+								}
+							})
+							->helperText('Indique el monto que está pagando el cliente por los boletos'),
+						Select::make('type')
+							->label('Tipo de pago')
+							->options([
+								'usd' => 'Dólares efectivo',
+								'bs' => 'Bolìvares efectivo',
+								'payment' => 'Pago mòvil',
+								'other' => 'Otros, divisas'
+							])
+							->live()
+							->rules(['required', 'in:usd,bs,payment,other'])
+							->validationMessages([
+								'required' => 'Debe seleccionar alguna de las opciones',
+								'in' => 'Debe seleccionar una opción válida'
+							])
+							->afterStateUpdated(function (Get $get, Set $set) {
+								$type = $get('type');
+								$total_payed = floatval($get('total_payed'));
+
+								if (in_array($type, ['bs', 'payment'])) {
+									$total_cost = $get('total_cost');
+									$currency = Currency::latest()->first()->value;
+									$set('equivalent', round($total_payed / $currency, 2));
+									$set('equivalent_bs', round($total_cost * $currency, 2));
+								}
+							}),
+						TextInput::make('ref')
+							->label('Referencia')
+							->type('number')
+							->numeric()
+							->step(0000)
+							->placeholder('Ej: 0001')
+							->rules(['sometimes', 'digits:4', 'regex:/^[0-9]+$/'])
+							->validationAttribute('nombre')
+							->validationMessages([
+								'regex' => 'Solo se aceptan números',
+								'digits' => 'Debe contener los 4 dígitos'
+							]),
+						Section::make()
+							->schema([
+								TextInput::make('currency')
+									->label('Tasa del día')
+									->type('number')
+									->numeric()
+									->integer()
+									->step(0000)
+									->placeholder('Ej: 0001')
+									->readOnly()
+									->default(fn() => Currency::latest()->first()->value),
+								TextInput::make('equivalent')
+									->label('Equivalente en divisas')
+									->type('number')
+									->placeholder('Ej: 0001')
+									->default(function (Get $get) {
+										$currency = $get('currency');
+										$total_payed = $get('total_payed');
+										$calc = round($currency * $total_payed, 2);
+
+										return $calc;
+									})
+									->disabled(),
+								TextInput::make('equivalent_bs')
+									->label('Monto a pagar en bs')
+									->type('number')
+									->placeholder('Ej: 0001')
+									->default(function (Get $get) {
+										$currency = $get('currency');
+										$total_cost = $get('total_cost');
+										$calc = round($currency * $total_cost, 2);
+
+										return $calc;
+									})
+									->disabled()
+							])->columns(3)
+							->hidden(fn(Get $get) => !in_array($get('type'), ['payment', 'bs']))
+					])
+					->nullable(),
+				Fieldset::make()
+					->schema([
+						TextInput::make('total_change')
+							->label('Vuelto total')
+							->default(0)
+							->suffix(' $')
+							->readOnly(),
+						Placeholder::make('message')
+							->label('Mensaje')
+							->content(function (Get $get) {
+								$payments = collect($get('payments') ?? []);
+								$changes = collect($get('changes') ?? []);
+								$total_cost = $get('total_cost_usd');
+
+								$total_change = round(
+									$changes->reduce(function ($total, $change) {
+										if ($change['type'] === null) return $total;
+
+										$total += in_array($change['type'], ['bs', 'payment'])
+											? $change['total_payed'] / $change['currency']
+											: $change['total_payed'];
+
+										return $total;
+									}, 0),
+									2
+								);
+								$total_payed = round(
+									$payments->reduce(function ($total, $payment) {
+										if ($payment['type'] === null) return $total;
+
+										$total += in_array($payment['type'], ['bs', 'payment'])
+											? (float) $payment['total_payed'] / $payment['currency']
+											: (float) $payment['total_payed'];
+
+										return $total;
+									}, 0),
+									2
+								);
+
+								if ($total_cost - $total_payed + $total_change == 0) return '';
+
+								return $total_cost > $total_payed + $total_change
+									? 'Debe'
+									: 'A devolver';
+							})
+							->live()
+					])
+					->columns(2),
 				Placeholder::make('note')
 					->label('Nota')
 					->content(function (Get $get) {
@@ -408,7 +693,7 @@ class SellTicketsAction extends Action
 			])
 			->modalSubmitAction(fn(Lottery $record) => count($record->tickets_left()) >= 1 ? null : false)
 			->action(function (Lottery $record, array $data) {
-				$currency = Currency::latest()->first()->value;
+				$currency = Currency::latest()->first();
 				$client = Client::find($data['client_id']);
 				$available_tickets = $record->tickets->where('client_id', null)->pluck('id')->toArray();
 				$selected_tickets = array_intersect($available_tickets, $data['tickets']);
@@ -417,6 +702,13 @@ class SellTicketsAction extends Action
 				$tickets = Ticket::findMany($selected_tickets);
 				$client->tickets()->saveMany($tickets);
 				$selected_tickets_count = count($selected_tickets);
+				$ticket_price = $record->ticket_price;
+				$total_cost = $ticket_price * $selected_tickets_count;
+				$payments = collect($data['payments'] ?? []);
+				$changes = collect($data['changes'] ?? []); // Get changes from the form data
+				$ticket_index = 0;
+				$total_paid_usd = 0;
+				$total_change_usd = 0;
 
 				Notification::make()
 					->title('Boletos vendidos')
@@ -424,102 +716,112 @@ class SellTicketsAction extends Action
 					->success()
 					->send();
 
-				if (in_array('payments', $data)) {
-					$ticket_price = $record->ticket_price;
-					$payments = Arr::get($data, 'payments', []);
+				if ($payments->isNotEmpty()) {
+					$payment_index = 0;
+					$current_payment = $payments[$payment_index];
 
-					$total_payed = $payments->reduce(function ($total, $payment) {
-						if ($payment['type'] === null) return $total;
+					while ($ticket_index < count($tickets) && $payment_index < count($payments)) {
+						$ticket = $tickets[$ticket_index];
+						$amount_usd = in_array($current_payment['type'], ['bs', 'payment'])
+							? $current_payment['total_payed'] / $currency->value
+							: $current_payment['total_payed'];
 
-						$total += in_array($payment['type'], ['bs', 'payment'])
-							? $payment['total_payed'] / $payment['currency']
-							: $payment['total_payed'];
+						$payment_amount_for_ticket = min($ticket_price, $amount_usd);
 
-						return $total;
-					}, 0);
+						$ticket->payments()->create([
+							'amount' => $payment_amount_for_ticket,
+							'type' => $current_payment['type'],
+							'ref' => $current_payment['ref'] ?? null,
+							'currency_id' => $currency->id,
+						]);
 
-					$has_payments = $total_payed > 0;
-					DB::beginTransaction();
+						$amount_usd -= $payment_amount_for_ticket;
 
-					try {
-						if ($has_payments) {
-							$currency = Currency::latest()->first();
-							$ticket_index = 0;
-							$ticketsArray = $tickets->toArray();
+						if ($payment_amount_for_ticket == $ticket_price) {
+							$ticket_index++;
+						}
 
-							foreach ($payments as $payment) {
-								if ($payment['type'] === null) continue;
-
-								$payment_amount_original = $payment['total_payed'];
-								$payment_amount_usd = $payment['type'] === 'bs' || $payment['type'] === 'payment'
-									? $payment_amount_original / $currency->value
-									: $payment_amount_original;
-
-								$remaining_payment_usd = $payment_amount_usd;
-
-								while ($remaining_payment_usd > 0 && $ticket_index < count($ticketsArray)) {
-									$ticket = Ticket::find($ticketsArray[$ticket_index]['id']);
-									$ticket_price = $record->ticket_price;
-
-									// ***THE FIX IS HERE***
-									$ticket_payment_total = $ticket->payments()->sum('amount') / $currency->value; // Reset for each ticket.  Convert to USD for comparison
-
-									$amount_to_apply_usd = min($remaining_payment_usd, $ticket_price - $ticket_payment_total);
-									$amount_to_apply_original = ($payment['type'] === 'bs' || $payment['type'] === 'payment')
-										? $amount_to_apply_usd * $currency->value
-										: $amount_to_apply_usd;
-
-									if ($amount_to_apply_original > 0) {
-										$ticket->payments()->create([
-											'amount' => $amount_to_apply_original,
-											'ref' => $payment['ref'] ?? '',
-											'type' => $payment['type'],
-											'currency_id' => $currency->id,
-										]);
-
-										$remaining_payment_usd -= $amount_to_apply_usd;
-									}
-
-									if ($ticket_price <= $ticket_payment_total + $amount_to_apply_usd) {
-										$ticket_index++;
-									}
-								}
+						if ($amount_usd === 0) {
+							$payment_index++;
+							if ($payment_index < count($payments)) {
+								$current_payment = $payments[$payment_index];
 							}
-							DB::commit();
-
-							Notification::make()
-								->title('Pagos registrados')
-								->body(Str::markdown("Se ha registrado el pago de **{$selected_tickets_count}** boletos bajo el monto de **{$total_payed} $ en total**"))
-								->success()
-								->send();
-						} else {
-							$total_cost = $ticket_price * $selected_tickets_count;
-							Notification::make()
-								->title('Pagos pendientes')
-								->body(Str::markdown("Se ha registrado **{$selected_tickets_count}** boletos **pendientes por pagar** equivalentes a ({$total_cost}$)"))
-								->warning()
-								->send();
 						}
-					} catch (\Exception $e) {
-						DB::rollBack();
 
-						$logFilePath = public_path('logs/error_log.txt');
+						//Last ticket and remaining amount, apply it all to the LAST PAYMENT RECORD for that ticket
+						if ($ticket_index === count($tickets) && $amount_usd > 0) {
+							$lastPayment = $ticket->payments()->orderBy('created_at', 'desc')->first(); // Get the last payment
 
-						if (!File::exists(public_path('logs'))) {
-							File::makeDirectory(public_path('logs'), 0755, true);
+							if ($lastPayment) { // Ensure there is payment record
+								$lastPayment->update([ // Update the last payment record
+									'amount' => $amount_usd,
+								]);
+								$amount_usd = 0; // Ensure no further processing of this amount
+							} else {
+								$ticket->payments()->create([ //If there is no payment record, create one
+									'amount' => $amount_usd,
+									'type' => $current_payment['type'], // Or 'change' if you have a change type
+									'ref' => $current_payment['ref'] ?? null,  // Or a separate change ref
+									'currency_id' => $currency->id,
+								]);
+								$amount_usd = 0; // Ensure no further processing of this amount
+							}
 						}
-						File::append($logFilePath, now() . ' - ' . "[TicketPaymentAction]" . ' ' . $e->getMessage() . PHP_EOL);
 					}
 
-					HasActivityLogger::logActivity($record, 'sell_tickets', 'create', [
-						'tickets' => $selected_tickets_count,
-						'ticket_price' => $ticket_price,
-						'total_payed' => $total_payed,
-						'payments' => $payments,
-						'currency' => $currency,
-						'client' => $client->toArray()
-					]);
+
+					foreach ($changes as $change) {
+						$lastTicket = $tickets->last();
+						$amount_usd = in_array($change['type'], ['bs', 'payment'])
+							? $change['total_payed'] / $currency->value
+							: $change['total_payed'];
+
+						$total_change_usd += $amount_usd;
+
+						$lastTicket->changesM()->create([ // Corrected relationship name
+							'amount' => $change['total_payed'],
+							'type' => $change['type'],
+							'ref' => $change['ref'],
+							'currency_id' => $currency->id,
+							'confirmed' => true
+						]);
+					}
+
+					$total_paid_usd = round(
+						$payments->reduce(function ($total, $payment) {
+							if ($payment['type'] === null) return $total;
+
+							$total += in_array($payment['type'], ['bs', 'payment'])
+								? (float) $payment['total_payed'] / $payment['currency']
+								: (float) $payment['total_payed'];
+
+							return $total;
+						}, 0),
+						2
+					);
+					$total_change_usd = round($total_change_usd, 2);
+
+					Notification::make()
+						->title('Pagos registrados')
+						->body(Str::markdown("Se ha registrado el pago de **{$selected_tickets_count}** boletos bajo el monto de **{$total_paid_usd} $ en total** y se ha entregado un cambio de **{$total_change_usd} $**"))
+						->success()
+						->send();
+				} else {
+					Notification::make()
+						->title('Pagos pendientes')
+						->body(Str::markdown("Se ha registrado **{$selected_tickets_count}** boletos **pendientes por pagar** equivalentes a ({$total_cost}$)"))
+						->warning()
+						->send();
 				}
+
+				HasActivityLogger::logActivity($record, 'sell_tickets', 'create', [
+					'tickets' => $selected_tickets_count,
+					'ticket_price' => $ticket_price,
+					'payments' => $payments,
+					'currency' => $currency,
+					'client' => $client->toArray(),
+					'changes' => $changes,
+				]);
 			});
 	}
 }
