@@ -113,12 +113,6 @@
                     </div>
                 </li>
             @endif
-            <li>
-                <div class="flex justify-between">
-                    <p class="font-bold">Notificado:</p>
-                    <p>{{ $ticketNotified }}</p>
-                </div>
-            </li>
         </ul>
 
         <x-slot name="footer">

@@ -6,10 +6,8 @@ use App\Filament\Traits\HasActivityLogger;
 use Filament\Tables\Actions\Action;
 use App\Models\Lottery;
 use App\Models\Ticket;
+use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
@@ -81,47 +79,28 @@ class RaffleAction extends Action
             ");
           })->columnSpanFull(),
 
-        // Payed tickets
-        Repeater::make('selected_tickets')
-          ->label('Seleccionar boletos ganadores')
-          ->schema([
-            Select::make('ticket')
-              ->label('Boletos')
-              ->rules([
-                'required'
-              ])
-              ->validationMessages([
-                'required' => 'Debe seleccionar una opción',
-                'in' => 'Debe seleccionar una opción de la lista'
-              ])
-              ->searchable()
-              ->in(
-                values: fn(Lottery $record) =>
-                $record->get_payed_tickets()->pluck('id')->toArray()
-              )
-              ->options(
-                fn(Lottery $record) =>
-                $record->get_payed_tickets()->pluck('ticket_owner_name', 'id')->toArray()
-              )
-              ->disableOptionWhen(function (string $value, Get $get) {
-                $selected_tickets = collect($get('../') ?? [])
-                  ->pluck('ticket')
-                  ->filter()
-                  ->map(fn($item) => (int) $item)
-                  ->toArray();
+        // Random draw info
+        Placeholder::make('')
+          ->content(function (Lottery $record) {
+            $total_winners = $record->total_winners;
+            $payed_tickets = count($record->get_payed_tickets());
 
-                return in_array((int) $value, $selected_tickets);
-              })
-          ])
-          ->itemLabel(function () {
-            static $custom_index = 1;
-            return "Número ganador: #" . $custom_index++;
+            return new HtmlString(
+              "Se seleccionarán <strong>{$total_winners} ganador(es)</strong> al azar entre los boletos pagados ({$payed_tickets} boletos disponibles)."
+            );
           })
-          ->addActionLabel('Agregar ganador')
-          ->defaultItems(fn(Lottery $record) => $record->total_winners)
-          ->maxItems(fn(Lottery $record) => $record->total_winners)
-          ->reorderable(false)
-          ->deletable(false)
+          ->columnSpanFull()
+          ->hidden(fn(Lottery $record) => count($record->getWinners()) > 0),
+
+        // Draw confirmation
+        Checkbox::make('confirm_draw')
+          ->label(function (Lottery $record) {
+            $total_winners = $record->total_winners;
+            $payed_tickets = count($record->get_payed_tickets());
+
+            return "Se sortearán {$total_winners} ganador(es) aleatoriamente entre {$payed_tickets} boletos pagados. ¿Confirmar?";
+          })
+          ->required()
           ->columnSpanFull()
           ->hidden(fn(Lottery $record) => count($record->getWinners()) > 0)
       ])
@@ -131,14 +110,10 @@ class RaffleAction extends Action
         count($record->getWinners()) === 0 ? null : false
       )
       ->action(function (Lottery $record, array $data) {
-        $flat_data = array_map(
-          fn($item) => $item['ticket'],
-          $data['selected_tickets']
-        );
-        $tickets = $record->get_payed_tickets();
-        $tickets_missing = $record->total_winners - count($tickets);
+        $pool = $record->get_payed_tickets();
+        $tickets_missing = $record->total_winners - count($pool);
 
-        if (count($tickets) < $record->total_winners) {
+        if (count($pool) < $record->total_winners) {
           Notification::make()
             ->title('Boletos faltantes')
             ->body(Str::markdown("No se pueden seleccionar los ganadores de la rifa #{$record->id} ({$record->name}), no hay suficientes boletos pagados, faltan ({$tickets_missing}) boletos por pagar"))
@@ -148,9 +123,11 @@ class RaffleAction extends Action
           return;
         }
 
+        $flat_data = $pool->pluck('id')->shuffle()->take($record->total_winners)->all();
         $prizes = $record->prizes;
         Ticket::with('client')
           ->findMany($flat_data)
+          ->sortBy(fn($ticket) => array_search($ticket->id, $flat_data))
           ->map(function ($ticket, $index) use ($record, $prizes) {
             $current_index = ++$index;
             $ticket->update([
@@ -169,13 +146,13 @@ class RaffleAction extends Action
         $record->update(['finished_at' => now()]);
 
         HasActivityLogger::logActivity($record, 'raffle', 'update', [
-          'tickets' => $tickets,
+          'tickets' => $pool,
           'data' => $flat_data
         ]);
 
         Notification::make()
           ->title('Ganadores seleccionados')
-          ->body(Str::markdown("Se han seleccionado los ganadores de la rifa #{$record->id} ({$record->name}), un total de ({$record->total_winners}) clientes ganaron, para notificarles haga clic en el botón de (Notificar a ganadores)"))
+          ->body(Str::markdown("Se han seleccionado los ganadores de la rifa #{$record->id} ({$record->name}), un total de ({$record->total_winners}) clientes ganaron."))
           ->success()
           ->send();
       });

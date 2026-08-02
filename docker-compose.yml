@@ -1,0 +1,47 @@
+name: lottery-app
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lottery-app:latest
+    container_name: lottery-app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:80"
+    environment:
+      APP_NAME: LotteryApp
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_KEY: "${APP_KEY:-base64:R29jhgo9zNr9TnXFP+KcUTdu1o4rct+yv5J0KK3GqGk=}"
+      APP_URL: "http://localhost:${APP_PORT:-8080}"
+      APP_TIMEZONE: America/Caracas
+      APP_LOCALE: es
+      APP_FALLBACK_LOCALE: es
+      APP_FAKER_LOCALE: es_US
+
+      # Base de datos SQLite (archivo en el volumen persistente)
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /data/database.sqlite
+
+      SESSION_DRIVER: database
+      SESSION_LIFETIME: 120
+      QUEUE_CONNECTION: database
+      CACHE_STORE: database
+      BROADCAST_CONNECTION: log
+      FILESYSTEM_DISK: local
+      LOG_CHANNEL: stack
+
+      MAIL_MAILER: log
+      MAIL_FROM_ADDRESS: "hello@example.com"
+      MAIL_FROM_NAME: "LotteryApp"
+
+      VITE_APP_NAME: LotteryApp
+    volumes:
+      # Volumen dedicado a la base de datos SQLite (los sources/migraciones
+      # permanecen dentro de la imagen).
+      - lottery_data:/data
+
+volumes:
+  lottery_data:

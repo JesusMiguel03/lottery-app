@@ -10,7 +10,7 @@ class LotteryTicketsComponent extends Component
 {
     public $record, $tickets, $clients;
     public $selectedTicket = null;
-    public $ticketNumber, $ticketClientName, $ticketPrice, $ticketPayment, $ticketChanges, $ticketWinner, $ticketWinnerOrder, $ticketNotified;
+    public $ticketNumber, $ticketClientName, $ticketPrice, $ticketPayment, $ticketChanges, $ticketWinner, $ticketWinnerOrder;
 
     public function mount(Model $record): void
     {
@@ -59,9 +59,6 @@ class LotteryTicketsComponent extends Component
             $this->ticketChanges = $ticket->changesM;
             $this->ticketWinner = $ticket->winner;
             $this->ticketWinnerOrder = $ticket->order;
-            $this->ticketNotified = $ticket->notified_at
-                ? ($ticket->notified_at)->translatedFormat('Y-m-d h:i:s a')
-                : 'Pendiente';
         }
 
         $this->dispatch($ticketId ? 'open-modal' : 'close-modal', id: 'ticketModal');

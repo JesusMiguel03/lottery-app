@@ -13,8 +13,7 @@
         "laravel/tinker": "^2.9",
         "leandrocfe/filament-apex-charts": "^3.1",
         "nunomaduro/laravel-optimize-database": "^1.0",
-        "spatie/laravel-backup": "^9.2",
-        "spatie/laravel-markdown": "^2.7"
+        "spatie/laravel-backup": "^9.2"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

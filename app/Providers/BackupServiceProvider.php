@@ -6,7 +6,7 @@ use App\Models\Backup;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 
 class BackupServiceProvider extends ServiceProvider
@@ -24,10 +24,18 @@ class BackupServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $today = Carbon::now()->toDateString();
-        $file = File::exists('./database/database.sqlite');
+        $database = database_path('database.sqlite');
 
-        if ($file) {
+        if (! File::exists($database)) {
+            return;
+        }
+
+        try {
+            if (! Schema::hasTable('backups')) {
+                return;
+            }
+
+            $today = Carbon::now()->toDateString();
             $backupLog = Backup::firstOrNew([]);
 
             if ($backupLog->executed_at !== $today) {
@@ -36,6 +44,9 @@ class BackupServiceProvider extends ServiceProvider
                 $backupLog->executed_at = $today;
                 $backupLog->save();
             }
+        } catch (\Throwable $e) {
+            report($e);
         }
     }
 }
+

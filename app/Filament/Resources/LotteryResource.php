@@ -3,8 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\LotteryResource\Actions\CancelTicketsAction;
-use App\Filament\Resources\LotteryResource\Actions\NotifyDebtorClientsAction;
-use App\Filament\Resources\LotteryResource\Actions\NotifyWinnerClientsAction;
 use App\Filament\Resources\LotteryResource\Actions\PrizeModalAction;
 use App\Filament\Resources\LotteryResource\Actions\RaffleAction;
 use App\Filament\Resources\LotteryResource\Actions\SeeSoldTicketsAction;
@@ -443,8 +441,6 @@ class LotteryResource extends Resource
                     TicketPaymentAction::make(),
                     CancelTicketsAction::make(),
                     PrizeModalAction::make(),
-                    NotifyDebtorClientsAction::make(),
-                    NotifyWinnerClientsAction::make(),
                     RaffleAction::make(),
                     DeleteAction::make()
                         ->after(function (Lottery $record) {

@@ -23,7 +23,6 @@ class Client extends Model
                 "client_id" => null,
                 "alerts" => 0,
                 "winner" => false,
-                "notified_at" => null,
             ]);
         });
     }

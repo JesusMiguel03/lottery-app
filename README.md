@@ -1,67 +1,181 @@
-test
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🎰 LotteryApp — Sistema de Administración de Loterías y Rifas
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistema web completo para la **gestión de loterías y rifas**: registro de clientes, creación de sorteos,
+venta de boletos, cobros, control de tasas de cambio y premiación con seguimiento de ganadores.
 
-## About Laravel
+> ⚠️ Este repositorio está configurado en **modo demostración** con datos precargados.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## ✨ Funcionalidades
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Módulo | Descripción |
+|---|---|
+| 🗓️ **Rifas / Sorteos** | Crear, editar, cerrar y eliminar sorteos (hasta 10.000 boletos por rifa). |
+| 🎟️ **Venta de boletos** | Selección múltiple de boletos libres, pago individual o abono posterior. |
+| 💰 **Pagos y cobros** | Pago total, abonos y control de deudores con estados por boleto. |
+| 👥 **Clientes** | Registro, edición, borrado y consulta de clientes con su historial. |
+| 💵 **Tasas de cambio** | Registro diario de la tasa oficial utilizada para pagos en Bs. |
+| 🏆 **Premios** | Configuración de premiación por sorteo y ejecución del sorteo (raffle) con registro de ganadores. |
+| 📊 **Dashboard** | Estadísticas, gráficas (ApexCharts) y widgets de control en tiempo real. |
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 🔑 Credenciales de demostración
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+| Campo | Valor |
+|---|---|
+| **URL del panel** | `http://localhost/admin` |
+| **Usuario** | `admin@demo.com` |
+| **Contraseña** | `demo` |
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+El formulario de inicio de sesión muestra las credenciales de demo para facilitar el acceso.
 
-## Laravel Sponsors
+### Datos precargados (seeder)
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- 1 usuario administrador (`admin@demo.com` / `demo`).
+- 8 clientes de ejemplo con cédulas y teléfonos ficticios.
+- 3 rifas: **activa**, **finalizada (con 3 ganadores)** y **próxima**.
+- Tasas de cambio de los últimos 2 días.
+- Boletos vendidos, pagados y/o pendientes en cada rifa.
+- Boletos ganadores en la rifa finalizada (visibles en la landing).
 
-### Premium Partners
+---
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+## 🐳 Demo con Docker + SQLite (recomendado)
 
-## Contributing
+Levantar toda la aplicación en modo demostración con un solo comando. El `Dockerfile`
+build multi-etapa instala dependencias de Composer, compila los assets (Vite) y arranca
+Apache + PHP + SQLite. Los datos de demo se migran y siembran automáticamente al iniciar.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+> Requisito: Docker Engine **20.10+** y Docker Compose **v2+**.
 
-## Code of Conduct
+```bash
+# Construir y levantar la aplicación
+docker compose up -d --build
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+La aplicación quedará disponible en:
 
-## Security Vulnerabilities
+- **Panel de administración:** `http://localhost:8080/admin`
+- **Usuario:** `admin@demo.com`
+- **Contraseña:** `demo`
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Comandos útiles
 
-## License
+```bash
+docker compose up -d --build      # Construir y arrancar
+docker compose logs -f app        # Ver logs
+docker compose restart            # Reiniciar
+docker compose stop               # Detener (sin borrar datos)
+docker compose down               # Detener y eliminar contenedor
+docker compose down -v            # Detener y borrar también la base de datos
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+La base de datos SQLite se guarda en un volumen Docker (`lottery_data`), así que los
+datos persisten entre reinicios. Para dejar los datos de demo como nuevos:
+
+```bash
+docker compose exec app php artisan migrate:fresh --seed
+```
+
+> 💡 Puedes cambiar el puerto expuesto con la variable `APP_PORT`:
+> `APP_PORT=90 docker compose up -d --build`
+
+---
+
+## 🚀 Instalación
+
+
+### Requisitos
+
+- PHP `^8.2`
+- Composer
+- Node.js `18+`
+- SQLite (por defecto) — opcionalmente MySQL/PostgreSQL
+
+### Pasos
+
+```bash
+# 1. Instalar dependencias
+composer install
+npm install
+
+# 2. Configurar entorno
+cp .env.example .env
+php artisan key:generate
+# → Edita .env si necesitas otra base de datos o configuración
+
+# 3. Crear la base de datos y sembrar datos de demo
+php artisan migrate --seed
+
+# 4. Assets de Filament y compilación frontend
+php artisan storage:link
+php artisan filament:assets
+npm run build
+
+# 5. Optimización para producción/demo
+php artisan optimize
+```
+
+### Ejecución en desarrollo
+
+```bash
+composer run dev
+```
+
+Esto levanta en paralelo: servidor PHP (`http://localhost:8000`), cola de jobs, logs y Vite.
+
+---
+
+## 🎯 ¿Cómo restablecer la demo?
+
+Cualquier dato que se modifique durante una prueba puede restaurarse en segundos:
+
+```bash
+php artisan migrate:fresh --seed
+```
+
+---
+
+## 🧰 Comandos útiles
+
+```bash
+php artisan tinker            # Consola interactiva
+php artisan db:seed           # Re-ejecuta los seeders (idempotente)
+php artisan make:filament-resource  # Nuevo recurso del panel
+```
+
+---
+
+## 🧱 Tecnologías
+
+- [Laravel 11](https://laravel.com)
+- [Filament 3](https://filamentphp.com) (panel de administración + Livewire)
+- [Tailwind CSS](https://tailwindcss.com) + Vite
+- [Filament ApexCharts](https://github.com/leandrocfe/filament-apex-charts)
+- SQLite / MySQL / PostgreSQL
+
+---
+
+## 📁 Estructura principal
+
+```
+app/
+├── Filament/
+│   ├── Pages/            # Dashboard y páginas del panel
+│   ├── Resources/        # Recursos: Client, Currency, Lottery
+│   └── Widgets/          # Widgets (estadísticas y gráficas)
+├── Livewire/             # Componentes Livewire (tickets, gráficas)
+├── Models/               # User, Client, Lottery, Ticket, Payment, Prize...
+├── Providers/            # AppServiceProvider, BackupServiceProvider, AdminPanelProvider
+database/seeders/         # DemoUserSeeder + DemoDataSeeder
+docs/                     # Instalación, requerimientos y TODO
+resources/views/landing.blade.php   # Landing pública
+```
+
+---
+
+## 📄 Licencia
+
+Proyecto de demostración basado en Laravel (MIT).

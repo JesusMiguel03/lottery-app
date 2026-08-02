@@ -7,7 +7,6 @@ use Filament\Pages\Page;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\HtmlString;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\ValidationException;
 
@@ -42,17 +41,7 @@ class AppServiceProvider extends ServiceProvider
 
         FilamentView::registerRenderHook(
             PanelsRenderHook::AUTH_LOGIN_FORM_BEFORE,
-            fn() => view('filament::components.badge', [
-                'slot' => new HtmlString("<a href='/admin/docs'>Ver Documentación</a>"),
-                'color' => 'info',
-            ])
-        );
-        FilamentView::registerRenderHook(
-            PanelsRenderHook::USER_MENU_BEFORE,
-            fn() => view('filament::components.badge', [
-                'slot' => new HtmlString("<a href='/admin/docs'>Ver Documentación</a>"),
-                'color' => 'info',
-            ])
+            fn() => view('filament.auth.demo-credentials'),
         );
     }
 }

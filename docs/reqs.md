@@ -25,4 +25,4 @@ Premios
 
     ## Notas
 
-    -   Esperar 2-3 minutos despues de ejecutar "node resources/js/ws_bot.js numero_tlf 'mensaje'"
+    -   Documentación técnica de instalación, requerimientos y módulos del sistema.

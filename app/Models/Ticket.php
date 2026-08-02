@@ -13,7 +13,6 @@ class Ticket extends Model
         'number',
         'alerts',
         'change_value',
-        'notified_at',
         'client_id',
         'lottery_id',
         'prize_id',

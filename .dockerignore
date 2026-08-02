@@ -1,0 +1,44 @@
+# Dependencias
+/node_modules
+/vendor
+
+# Entorno y secretos
+.env
+.env.*
+!.env.example
+
+# Control de versiones y herramientas
+.git
+.gitignore
+.github
+.atl
+.cline
+
+# Building / caché del framework
+/storage/logs/*
+/storage/framework/*
+!.gitkeep
+/bootstrap/cache/*.php
+/public/build
+/public/hot
+/public/storage
+
+# Base de datos SQLite (se genera en el contenedor)
+/database/*.sqlite
+/database/*.sqlite-*
+/database/.gitignore
+
+# Documentación y capturas (no necesarios en la imagen)
+/docs
+/screenshots
+/README.md
+
+# Miscelánea
+phpunit.xml
+*.log
+npm-debug.log
+yarn-error.log
+Dockerfile
+docker-compose.yml
+.dockerignore
+_take_screens.cjs
