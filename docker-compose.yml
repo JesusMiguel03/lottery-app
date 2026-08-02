@@ -38,10 +38,3 @@ services:
       MAIL_FROM_NAME: "LotteryApp"
 
       VITE_APP_NAME: LotteryApp
-    volumes:
-      # Volumen dedicado a la base de datos SQLite (los sources/migraciones
-      # permanecen dentro de la imagen).
-      - lottery_data:/data
-
-volumes:
-  lottery_data:
