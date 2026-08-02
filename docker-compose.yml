@@ -5,25 +5,26 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: lottery-app:latest
     container_name: lottery-app
     restart: unless-stopped
     ports:
       - "${APP_PORT:-8080}:80"
     environment:
       APP_NAME: LotteryApp
-      APP_ENV: local
-      APP_DEBUG: "true"
+      APP_ENV: production
+      APP_DEBUG: false
       APP_KEY: "${APP_KEY:-base64:R29jhgo9zNr9TnXFP+KcUTdu1o4rct+yv5J0KK3GqGk=}"
-      APP_URL: "http://localhost:${APP_PORT:-8080}"
+      APP_URL: ${DOCKER_APP_URL:-http://localhost:8080}
       APP_TIMEZONE: America/Caracas
       APP_LOCALE: es
       APP_FALLBACK_LOCALE: es
       APP_FAKER_LOCALE: es_US
 
+      RUN_MIGRATIONS: ${DOCKER_RUN_MIGRATIONS:-true}
+
       # Base de datos SQLite (archivo en el volumen persistente)
       DB_CONNECTION: sqlite
-      DB_DATABASE: /data/database.sqlite
+      DB_DATABASE: /var/www/html/database/database.sqlite
 
       SESSION_DRIVER: database
       SESSION_LIFETIME: 120
@@ -33,8 +34,12 @@ services:
       FILESYSTEM_DISK: local
       LOG_CHANNEL: stack
 
-      MAIL_MAILER: log
-      MAIL_FROM_ADDRESS: "hello@example.com"
-      MAIL_FROM_NAME: "LotteryApp"
+      MAIL_MAILER: ${DOCKER_MAIL_MAILER:-smtp}
+      MAIL_HOST: ${DOCKER_MAIL_HOST:-}
+      MAIL_PORT: ${DOCKER_MAIL_PORT:-2525}
+      MAIL_USERNAME: ${DOCKER_MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${DOCKER_MAIL_PASSWORD:-}
+      MAIL_FROM_ADDRESS: ${DOCKER_MAIL_FROM_ADDRESS:-}
+      MAIL_FROM_NAME: ${DOCKER_MAIL_FROM_NAME:-LoteryApp}
 
       VITE_APP_NAME: LotteryApp
