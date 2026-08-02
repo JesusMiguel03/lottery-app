@@ -57,7 +57,7 @@ docker compose up -d --build
 
 La aplicación quedará disponible en:
 
-- **Panel de administración:** `http://localhost:8080/admin`
+- **Panel de administración:** `http://localhost:8090/admin`
 - **Usuario:** `admin@demo.com`
 - **Contraseña:** `demo`
 

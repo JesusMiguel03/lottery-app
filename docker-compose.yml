@@ -8,13 +8,13 @@ services:
     container_name: lottery-app
     restart: unless-stopped
     ports:
-      - "${APP_PORT:-8080}:80"
+      - "${APP_PORT:-8090}:80"
     environment:
       APP_NAME: LotteryApp
       APP_ENV: production
       APP_DEBUG: false
       APP_KEY: "${APP_KEY:-base64:R29jhgo9zNr9TnXFP+KcUTdu1o4rct+yv5J0KK3GqGk=}"
-      APP_URL: ${DOCKER_APP_URL:-http://localhost:8080}
+      APP_URL: ${DOCKER_APP_URL:-http://localhost:8090}
       APP_TIMEZONE: America/Caracas
       APP_LOCALE: es
       APP_FALLBACK_LOCALE: es
