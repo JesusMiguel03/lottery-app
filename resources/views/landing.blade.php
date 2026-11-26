@@ -50,7 +50,6 @@
                     <span class="font-editorial text-2xl sm:text-[1.75rem] tracking-tight text-[#111315] leading-none">
                         LotteryApp
                     </span>
-                    <span class="w-2 h-2 rounded-full bg-[#0F766E] translate-y-0.5 transition-transform group-hover:scale-125" aria-hidden="true"></span>
                 </a>
 
                 <!-- Desktop Navigation -->
@@ -109,7 +108,6 @@
                 <!-- Left Column: Editorial Headline & Actions -->
                 <div class="lg:col-span-7 space-y-8">
                     <div class="inline-flex items-center gap-2.5 border border-[#E4E2DC] bg-white px-3 py-1.5 rounded-sm">
-                        <span class="w-1.5 h-1.5 rounded-full bg-[#0F766E]" aria-hidden="true"></span>
                         <span class="font-mono-tabular text-[11px] font-medium uppercase tracking-[0.14em] text-[#575B62]">
                             SISTEMA DE GESTIÓN DE RIFAS
                         </span>
@@ -152,7 +150,6 @@
                                 </h2>
                             </div>
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 border border-[#0F766E]/30 bg-[#0F766E]/5 text-[#0F766E] font-mono-tabular text-[11px] font-medium uppercase tracking-wider rounded-sm">
-                                <span class="w-1.5 h-1.5 rounded-full bg-[#0F766E]"></span>
                                 Activo
                             </span>
                         </div>
@@ -246,7 +243,6 @@
                             <div class="flex items-center justify-between gap-3 pb-4 border-b border-[#E4E2DC]">
                                 @if($lottery->isActive == 'Disponible')
                                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#0F766E]/10 text-[#0F766E] border border-[#0F766E]/25 font-mono-tabular text-[11px] font-medium uppercase tracking-wider rounded-sm">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-[#0F766E]"></span>
                                         {{ $lottery->isActive }}
                                     </span>
                                 @else
@@ -474,7 +470,6 @@
                 <div class="space-y-1.5">
                     <div class="inline-flex items-center gap-2">
                         <span class="font-editorial text-2xl text-[#111315] leading-none">LotteryApp</span>
-                        <span class="w-1.5 h-1.5 rounded-full bg-[#0F766E]" aria-hidden="true"></span>
                     </div>
                     <p class="text-xs text-[#575B62]">
                         &copy; {{ date('Y') }} LotteryApp. Gestión de rifas, sorteos y boletos en tiempo real.
