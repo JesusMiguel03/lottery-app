@@ -89,6 +89,9 @@ COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh \
     && chown www-data:www-data /usr/local/bin/entrypoint.sh
 
+RUN printf '<IfModule mpm_prefork_module>\nStartServers 1\nMinSpareServers 1\nMaxSpareServers 2\nMaxRequestWorkers 6\nMaxConnectionsPerChild 500\n</IfModule>\n' > /etc/apache2/mods-available/mpm_prefork.conf \
+    && printf 'memory_limit=96M\nopcache.enable=1\nopcache.enable_cli=0\nopcache.memory_consumption=64\nopcache.interned_strings_buffer=4\nopcache.max_accelerated_files=8000\nopcache.validate_timestamps=0\n' > /usr/local/etc/php/conf.d/demo-limits.ini
+
 EXPOSE 80
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

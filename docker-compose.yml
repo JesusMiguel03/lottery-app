@@ -43,3 +43,15 @@ services:
       MAIL_FROM_NAME: ${DOCKER_MAIL_FROM_NAME:-LoteryApp}
 
       VITE_APP_NAME: LotteryApp
+    mem_limit: 300m
+    memswap_limit: 512m
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+          cpus: "0.5"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
